@@ -9,9 +9,6 @@ import {
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 
-// ==========================================
-// CARGADOR GLOBAL DE SCRIPTS (SÚPER SEGURO)
-// ==========================================
 const loadScript = (src) => {
     return new Promise((resolve, reject) => {
         const existingScript = document.querySelector(`script[src="${src}"]`);
@@ -52,6 +49,7 @@ const docRef = doc(db, "sistema_l68", "datos_maestros");
 const initialData = {
     empresas: [],
     alumnos: [],
+    instructores: [],
     cursos: [],
     programacion: [],
     ausencias: [],
@@ -432,6 +430,106 @@ const Navbar = ({ step, setStep, currentUser, onLogout }) => (
     </header>
 );
 
+function FormInstructor({ data, setData, addLog }) {
+    const [nombre, setNombre] = useState('');
+    const [mensaje, setMensaje] = useState('');
+    const [error, setError] = useState('');
+    const [editingId, setEditingId] = useState(null);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!nombre.trim()) { setError('El nombre del instructor es obligatorio.'); return; }
+        
+        if (editingId) {
+            const isDuplicate = (data.instructores || []).some(inst => inst.id !== editingId && inst.nombre.toLowerCase() === nombre.trim().toLowerCase());
+            if (isDuplicate) { setError('Este instructor ya existe.'); return; }
+            setData({ ...data, instructores: (data.instructores || []).map(inst => inst.id === editingId ? { ...inst, nombre: nombre.trim() } : inst) });
+            addLog('Instructores', `Actualizó el instructor a "${nombre.trim()}"`);
+            setMensaje('Instructor actualizado con éxito.');
+            setEditingId(null);
+        } else {
+            if ((data.instructores || []).some(inst => inst.nombre.toLowerCase() === nombre.trim().toLowerCase())) { setError('Este instructor ya está registrado.'); return; }
+            const nuevoInstructor = { id: Date.now().toString(), nombre: nombre.trim() };
+            setData({ ...data, instructores: [...(data.instructores || []), nuevoInstructor] });
+            addLog('Instructores', `Registró al instructor "${nuevoInstructor.nombre}"`);
+            setMensaje('Instructor registrado con éxito.');
+        }
+        setError(''); setNombre(''); setTimeout(() => setMensaje(''), 3000);
+    };
+
+    const handleEdit = (inst) => { setEditingId(inst.id); setNombre(inst.nombre); window.scrollTo({top:0, behavior:'smooth'}); };
+    const handleDelete = (instructor) => {
+        setData({ ...data, instructores: (data.instructores || []).filter(i => i.id !== instructor.id) });
+        addLog('Instructores', `Eliminó al instructor "${instructor.nombre}"`);
+    };
+
+    return (
+        <div className="relative min-h-[calc(100vh-5rem)] -m-4 md:-m-8 lg:-m-10 p-4 md:p-8 lg:p-10 flex items-center justify-center">
+            <div className="absolute inset-0 bg-cover bg-center -z-10 filter brightness-[0.75]" style={{ backgroundImage: `url('/PC-12 WALLPAPER.jfif')` }}></div>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] -z-10"></div>
+
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl w-full mx-auto">
+                <div className="bg-white/90 backdrop-blur-xl p-8 md:p-10 rounded-[2rem] shadow-2xl shadow-slate-900/30 border border-white/80">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="p-4 bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-2xl shadow-lg shadow-fuchsia-500/30 text-white">
+                            <GraduationCap className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">{editingId ? 'Editar Instructor' : 'Alta de Instructor'}</h2>
+                            <p className="text-slate-500 mt-1">Gestión de la plantilla de instructores</p>
+                        </div>
+                    </div>
+                    
+                    {mensaje && <div className="mb-8 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3 shadow-sm"><CheckCircle2 className="w-6 h-6 text-emerald-500" /> <span className="font-medium">{mensaje}</span></div>}
+                    {error && <div className="mb-8 p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl flex items-center gap-3 shadow-sm"><AlertTriangle className="w-6 h-6 text-red-500" /> <span className="font-medium">{error}</span></div>}
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-semibold text-slate-700 ml-1">Nombre Completo del Instructor</label>
+                            <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-fuchsia-500/10 focus:border-fuchsia-500 transition-all outline-none text-slate-700 placeholder:text-slate-400 shadow-sm" placeholder="Ej. Cap. Carlos Ruiz" />
+                        </div>
+                        <div className="pt-4 flex gap-4">
+                            <button type="submit" className="flex-1 bg-gradient-to-r from-fuchsia-500 to-purple-600 hover:from-fuchsia-600 hover:to-purple-700 text-white p-4 rounded-2xl font-bold text-lg shadow-lg shadow-fuchsia-500/30 transition-all hover:-translate-y-0.5 active:scale-[0.98]">
+                                {editingId ? 'Actualizar Instructor' : 'Registrar Instructor'}
+                            </button>
+                            {editingId && <button type="button" onClick={()=>{setEditingId(null); setNombre('');}} className="px-6 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-2xl font-bold transition-colors">Cancelar</button>}
+                        </div>
+                    </form>
+
+                    <div className="mt-12 pt-8 border-t border-slate-100">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-bold text-slate-800">Directorio de Instructores</h3>
+                            <span className="bg-fuchsia-100 text-fuchsia-700 py-1 px-3 rounded-full text-sm font-bold">{(data.instructores || []).length} total</span>
+                        </div>
+                        
+                        {(!data.instructores || data.instructores.length === 0) ? (
+                            <div className="text-center py-10 bg-slate-50/80 rounded-3xl border border-slate-100 border-dashed">
+                                <GraduationCap className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                                <p className="text-slate-500 font-medium">Aún no hay instructores registrados.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-1">
+                                {data.instructores.map(inst => (
+                                    <div key={inst.id} className="group flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:border-fuchsia-300 hover:shadow-md transition-all">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-fuchsia-50 flex items-center justify-center text-fuchsia-600 font-bold text-lg">{inst.nombre.charAt(0).toUpperCase()}</div>
+                                            <span className="font-bold text-slate-700 truncate max-w-[150px]" title={inst.nombre}>{inst.nombre}</span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <button onClick={() => handleEdit(inst)} className="p-2 text-fuchsia-600 hover:bg-fuchsia-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100"><Edit3 className="w-4 h-4" /></button>
+                                            <button onClick={() => handleDelete(inst)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function FormCurso({ data, setData, addLog }) {
     const [nombre, setNombre] = useState('');
     const [horas, setHoras] = useState('');
@@ -443,7 +541,7 @@ function FormCurso({ data, setData, addLog }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!nombre.trim() || !horas || !instructor.trim()) {
+        if (!nombre.trim() || !horas || !instructor) {
             setError('Todos los campos son obligatorios.');
             return;
         }
@@ -452,7 +550,7 @@ function FormCurso({ data, setData, addLog }) {
             id: editingId || Date.now().toString(), 
             nombre: nombre.trim(), 
             horasTotales: parseInt(horas),
-            instructor: instructor.trim(),
+            instructor: instructor,
             modalidad
         };
 
@@ -466,7 +564,7 @@ function FormCurso({ data, setData, addLog }) {
             setMensaje('Curso actualizado con éxito.');
             setEditingId(null);
         } else {
-            if (data.cursos.some(c => c.nombre.toLowerCase() === nombre.trim().toLowerCase() && c.instructor.toLowerCase() === instructor.trim().toLowerCase())) {
+            if (data.cursos.some(c => c.nombre.toLowerCase() === nombre.trim().toLowerCase() && c.instructor === instructor)) {
                 setError('Este curso con el mismo instructor ya está registrado.');
                 return;
             }
@@ -548,11 +646,14 @@ function FormCurso({ data, setData, addLog }) {
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-slate-700 ml-1">Instructor</label>
-                                <input
-                                    type="text" value={instructor} onChange={(e) => setInstructor(e.target.value)}
-                                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none text-slate-700 placeholder:text-slate-400 shadow-sm"
-                                    placeholder="Ej. Cap. Carlos Ruiz"
-                                />
+                                <select 
+                                    value={instructor} onChange={(e) => setInstructor(e.target.value)}
+                                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none text-slate-700 shadow-sm appearance-none cursor-pointer"
+                                    style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
+                                >
+                                    <option value="" disabled>Seleccione un instructor...</option>
+                                    {(data.instructores || []).map(inst => <option key={inst.id} value={inst.nombre}>{inst.nombre}</option>)}
+                                </select>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-slate-700 ml-1">Modalidad</label>
@@ -567,7 +668,7 @@ function FormCurso({ data, setData, addLog }) {
                         </div>
                         
                         <div className="pt-4 flex gap-4">
-                            <button type="submit" className="flex-1 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white p-4 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/30 transition-all hover:-translate-y-0.5 active:scale-[0.98]">
+                            <button type="submit" disabled={!data.instructores || data.instructores.length === 0} className="flex-1 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 disabled:from-slate-300 disabled:to-slate-400 text-white p-4 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/30 transition-all hover:-translate-y-0.5 active:scale-[0.98]">
                                 {editingId ? 'Actualizar Curso' : 'Registrar Curso'}
                             </button>
                             {editingId && (
@@ -576,6 +677,7 @@ function FormCurso({ data, setData, addLog }) {
                                 </button>
                             )}
                         </div>
+                        {(!data.instructores || data.instructores.length === 0) && <p className="text-sm text-amber-600 text-center mt-3 font-medium flex items-center justify-center gap-2"><AlertTriangle className="w-4 h-4" /> Debe registrar al menos un instructor primero.</p>}
                     </form>
 
                     <div className="mt-12 pt-8 border-t border-slate-100">
@@ -588,7 +690,7 @@ function FormCurso({ data, setData, addLog }) {
                         
                         {data.cursos.length === 0 ? (
                             <div className="text-center py-10 bg-slate-50/80 rounded-3xl border border-slate-100 border-dashed">
-                                <GraduationCap className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                                <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                                 <p className="text-slate-500 font-medium">No hay cursos registrados en el catálogo.</p>
                             </div>
                         ) : (
@@ -888,11 +990,11 @@ function FormAusencia({ data, setData, addLog }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!instructor.trim() || !fechaInicio || !fechaFin) return setError('Llene los campos obligatorios.');
+        if (!instructor || !fechaInicio || !fechaFin) return setError('Llene los campos obligatorios.');
         if (causa === 'Otro' && !otroMotivo.trim()) return setError('Especifique el motivo de la ausencia.');
         if (new Date(fechaInicio) > new Date(fechaFin)) return setError('Fechas inválidas.');
 
-        const nuevaAusencia = { id: editingId || Date.now().toString(), instructor: instructor.trim(), causa, otroMotivo: causa === 'Otro' ? otroMotivo.trim() : '', fechaInicio, fechaFin };
+        const nuevaAusencia = { id: editingId || Date.now().toString(), instructor: instructor, causa, otroMotivo: causa === 'Otro' ? otroMotivo.trim() : '', fechaInicio, fechaFin };
 
         if (editingId) {
             setData({ ...data, ausencias: (data.ausencias || []).map(a => a.id === editingId ? nuevaAusencia : a) });
@@ -909,7 +1011,7 @@ function FormAusencia({ data, setData, addLog }) {
     const handleDelete = (id) => { setData({ ...data, ausencias: data.ausencias.filter(a => a.id !== id) }); addLog('Ausencias', `Eliminó registro de ausencia`); };
     const handleEdit = (a) => { setEditingId(a.id); setInstructor(a.instructor); setCausa(a.causa); setOtroMotivo(a.otroMotivo || ''); setFechaInicio(a.fechaInicio); setFechaFin(a.fechaFin); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
-    const instructoresUnicos = [...new Set(data.cursos.map(c => c.instructor))].filter(Boolean);
+    const instructoresUnicos = (data.instructores || []).map(i => i.nombre);
 
     return (
         <div className="relative min-h-[calc(100vh-5rem)] -m-4 md:-m-8 lg:-m-10 p-4 md:p-8 lg:p-10 flex items-center justify-center">
@@ -935,14 +1037,14 @@ function FormAusencia({ data, setData, addLog }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-1.5 md:col-span-2">
                                 <label className="text-sm font-semibold text-slate-700 ml-1">Seleccionar Instructor</label>
-                                <select value={instructor} onChange={e => setInstructor(e.target.value)} className="w-full p-4 bg-white border rounded-2xl outline-none shadow-sm">
+                                <select value={instructor} onChange={e => setInstructor(e.target.value)} className="w-full p-4 bg-white border rounded-2xl outline-none shadow-sm appearance-none cursor-pointer" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}>
                                     <option value="" disabled>Elija un instructor...</option>
                                     {instructoresUnicos.map(i => <option key={i} value={i}>{i}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-1.5 md:col-span-2">
                                 <label className="text-sm font-semibold text-slate-700 ml-1">Causa de la Ausencia</label>
-                                <select value={causa} onChange={e => setCausa(e.target.value)} className="w-full p-4 bg-white border rounded-2xl outline-none shadow-sm">
+                                <select value={causa} onChange={e => setCausa(e.target.value)} className="w-full p-4 bg-white border rounded-2xl outline-none shadow-sm appearance-none cursor-pointer" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}>
                                     <option value="Está en curso">Está en curso</option>
                                     <option value="Vacaciones">Vacaciones</option>
                                     <option value="Otro">Otro motivo...</option>
@@ -1351,7 +1453,7 @@ function GanttBuilder({ data, setData, addLog }) {
                                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-2"><span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-sm">1</span> Definir Materia y Fechas</h3>
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-semibold text-slate-700 ml-1">Curso a impartir</label>
-                                    <select value={formGantt.cursoId} onChange={e => setFormGantt({...formGantt, cursoId: e.target.value})} className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition-all outline-none text-slate-700 appearance-none shadow-sm" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}>
+                                    <select value={formGantt.cursoId} onChange={e => setFormGantt({...formGantt, cursoId: e.target.value})} className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition-all outline-none text-slate-700 appearance-none shadow-sm cursor-pointer" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}>
                                         <option value="" disabled>Seleccione un curso del catálogo...</option>
                                         {data.cursos.map(c => <option key={c.id} value={c.id}>{c.modalidad==='Online'?'🟢':'🔵'} {c.nombre} ({c.horasTotales} hrs) - Inst. {c.instructor}</option>)}
                                     </select>
@@ -1824,6 +1926,7 @@ export default function App() {
             if (docSnap.exists()) {
                 const fetchedData = docSnap.data();
                 if (!fetchedData.usuarios) fetchedData.usuarios = initialData.usuarios;
+                if (!fetchedData.instructores) fetchedData.instructores = initialData.instructores;
                 setData(fetchedData);
             } else { setDoc(docRef, initialData); }
             setDataLoaded(true);
@@ -1879,6 +1982,7 @@ export default function App() {
         switch(step) {
             case 'empresa': return <FormEmpresa data={data} setData={handleUpdateData} addLog={addLog} />;
             case 'alumno': return <FormAlumno data={data} setData={handleUpdateData} addLog={addLog} />;
+            case 'instructor': return <FormInstructor data={data} setData={handleUpdateData} addLog={addLog} />;
             case 'curso': return <FormCurso data={data} setData={handleUpdateData} addLog={addLog} />;
             case 'ausencias': return <FormAusencia data={data} setData={handleUpdateData} addLog={addLog} />;
             case 'gantt': return <GanttBuilder data={data} setData={handleUpdateData} addLog={addLog} />;
@@ -1907,6 +2011,7 @@ export default function App() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <DashboardCard icon={Building2} title="Empresas" color="sky" action="empresa" desc="Directorio de aerolíneas contratantes." />
                         <DashboardCard icon={Users} title="Alumnos" color="emerald" action="alumno" desc="Inscripción de personal y tripulantes." />
+                        <DashboardCard icon={GraduationCap} title="Instructores" color="fuchsia" action="instructor" desc="Alta y gestión de la plantilla de instructores." />
                         <DashboardCard icon={BookOpen} title="Cursos" color="indigo" action="curso" desc="Catálogo de materias L68 (Online/Presencial)." />
                         <DashboardCard icon={LayoutDashboard} title="Gantt & IA" color="amber" action="gantt" desc="Planificador Automático IA y Manual." />
                         <DashboardCard icon={FileText} title="Reportes PDF" color="pink" action="reportes" desc="Resumen tabular mensual de cursos impartidos." />
