@@ -4,7 +4,8 @@ import {
     Trash2, ChevronDown, PlusCircle, Printer, Image as ImageIcon, 
     Home, BookOpen, Plane, FileText, ChevronRight, Download,
     ShieldCheck, LayoutDashboard, Users, GraduationCap,
-    LogOut, Key, User, History, Search, Edit3, UserCog, Wand2, Filter
+    LogOut, Key, User, History, Search, Edit3, UserCog, Wand2, Filter,
+    X, ClipboardList
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
@@ -1617,6 +1618,7 @@ function GanttVisualizer({ programacion, goBack, generarListaAlumnosPDF, addLog 
     const ganttRef = useRef(null);
     const [mesFiltro, setMesFiltro] = useState('Todos');
     const [instFiltro, setInstFiltro] = useState('Todos');
+    const [showReporte, setShowReporte] = useState(false);
 
     const mesesDisponibles = ['Todos', ...new Set(programacion.map(p => {
         const d = new Date(p.fechaInicio + 'T00:00:00');
@@ -1659,12 +1661,36 @@ function GanttVisualizer({ programacion, goBack, generarListaAlumnosPDF, addLog 
         addLog('Documentos', `Exportó el diagrama de Gantt como Imagen PNG`);
         try {
             await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-            const pdfButtons = document.querySelectorAll('.pdf-button'); pdfButtons.forEach(btn => btn.style.display = 'none');
-            const canvas = await window.html2canvas(ganttRef.current, { scale: 2, backgroundColor: '#ffffff' });
+            const pdfButtons = document.querySelectorAll('.pdf-button'); 
+            pdfButtons.forEach(btn => btn.style.display = 'none');
+            
+            const element = ganttRef.current;
+            const parent = element.parentElement;
+            
+            const originalScrollLeft = parent.scrollLeft;
+            const originalOverflow = parent.style.overflow;
+            parent.style.overflow = 'visible';
+            
+            const canvas = await window.html2canvas(element, { 
+                scale: 2, 
+                backgroundColor: '#ffffff',
+                width: element.scrollWidth,
+                height: element.scrollHeight,
+                windowWidth: element.scrollWidth
+            });
+            
+            parent.style.overflow = originalOverflow;
+            parent.scrollLeft = originalScrollLeft;
             pdfButtons.forEach(btn => btn.style.display = '');
-            const url = canvas.toDataURL('image/png'); const link = document.createElement('a');
-            link.download = 'diagrama_gantt_l68.png'; link.href = url; link.click();
-        } catch (error) { alert('Hubo un error al exportar la imagen.'); }
+
+            const url = canvas.toDataURL('image/png'); 
+            const link = document.createElement('a');
+            link.download = 'diagrama_gantt_l68.png'; 
+            link.href = url; 
+            link.click();
+        } catch (error) { 
+            alert('Hubo un error al exportar la imagen.'); 
+        }
     };
 
     const exportToPDF = async () => {
@@ -1672,14 +1698,93 @@ function GanttVisualizer({ programacion, goBack, generarListaAlumnosPDF, addLog 
         try {
             await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
             await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-            const pdfButtons = document.querySelectorAll('.pdf-button'); pdfButtons.forEach(btn => btn.style.display = 'none');
-            const canvas = await window.html2canvas(ganttRef.current, { scale: 2, backgroundColor: '#ffffff' });
+            
+            const pdfButtons = document.querySelectorAll('.pdf-button'); 
+            pdfButtons.forEach(btn => btn.style.display = 'none');
+            
+            const element = ganttRef.current;
+            const parent = element.parentElement;
+            
+            const originalScrollLeft = parent.scrollLeft;
+            const originalOverflow = parent.style.overflow;
+            parent.style.overflow = 'visible';
+            
+            const canvas = await window.html2canvas(element, { 
+                scale: 2, 
+                backgroundColor: '#ffffff',
+                width: element.scrollWidth,
+                height: element.scrollHeight,
+                windowWidth: element.scrollWidth
+            });
+            
+            parent.style.overflow = originalOverflow;
+            parent.scrollLeft = originalScrollLeft;
             pdfButtons.forEach(btn => btn.style.display = '');
-            const imgData = canvas.toDataURL('image/jpeg', 1.0); const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-            const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            pdf.addImage(imgData, 'JPEG', 0, 10, pdfWidth, pdfHeight); pdf.save('diagrama_gantt_l68.pdf');
-        } catch (error) { alert('Hubo un error al exportar el PDF.'); }
+
+            const imgData = canvas.toDataURL('image/jpeg', 1.0); 
+            const { jsPDF } = window.jspdf;
+            
+            const pdfWidth = canvas.width;
+            const pdfHeight = canvas.height;
+            const pdf = new jsPDF({ 
+                orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait', 
+                unit: 'px', 
+                format: [pdfWidth, pdfHeight] 
+            });
+            
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight); 
+            pdf.save('diagrama_gantt_l68.pdf');
+        } catch (error) { 
+            console.error(error);
+            alert('Hubo un error al exportar el PDF.'); 
+        }
+    };
+
+    const exportReporteGeneralPDF = async () => {
+        addLog('Documentos', `Exportó el reporte general del Gantt a PDF`);
+        try {
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js');
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(18); doc.setTextColor(15, 23, 42); 
+            doc.text("Reporte General de Cursos Programados", 14, 20);
+            
+            doc.setFontSize(11); doc.setTextColor(71, 85, 105);
+            doc.text(`Filtro actual - Instructor: ${instFiltro} | Mes: ${mesFiltro}`, 14, 28);
+            doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 14, 34);
+
+            const tableColumn = ["Curso", "Cliente", "Instructor", "Periodo"];
+            const tableRows = [...programacionFiltrada]
+                .sort((a, b) => new Date(a.fechaInicio) - new Date(b.fechaInicio))
+                .map(p => [
+                    p.curso.nombre,
+                    p.empresa.nombre,
+                    p.curso.instructor,
+                    `${formatDateStr(p.fechaInicio)} al ${formatDateStr(p.fechaFin)}`
+                ]);
+
+            if (typeof doc.autoTable !== 'function') {
+                throw new Error("jsPDF AutoTable no se inicializó correctamente.");
+            }
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 40,
+                theme: 'striped',
+                headStyles: { fillColor: [15, 23, 42] }, 
+                styles: { fontSize: 10, cellPadding: 5 }
+            });
+
+            doc.save(`Reporte_General_Gantt.pdf`);
+            
+        } catch (error) {
+            console.error("Error al generar PDF:", error);
+            alert('Hubo un error al generar el PDF del reporte.');
+        }
     };
 
     return (
@@ -1700,7 +1805,11 @@ function GanttVisualizer({ programacion, goBack, generarListaAlumnosPDF, addLog 
                         </div>
                         
                         <div className="flex flex-wrap items-center gap-3">
-                            <div className="bg-slate-100 p-1.5 rounded-xl flex items-center shadow-inner border border-slate-200">
+                            <button onClick={() => setShowReporte(true)} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20">
+                                <ClipboardList className="w-4 h-4 text-indigo-200" /> Ver Reporte General
+                            </button>
+                            
+                            <div className="bg-slate-100 p-1.5 rounded-xl flex items-center shadow-inner border border-slate-200 ml-2">
                                 <Filter className="w-4 h-4 text-slate-400 ml-2" />
                                 <select value={instFiltro} onChange={e => setInstFiltro(e.target.value)} className="bg-transparent border-0 text-sm font-bold text-slate-700 outline-none p-2 cursor-pointer w-32">
                                     {instDisponibles.map(m => <option key={m} value={m}>{m === 'Todos' ? 'Instructores' : m}</option>)}
@@ -1823,6 +1932,70 @@ function GanttVisualizer({ programacion, goBack, generarListaAlumnosPDF, addLog 
                     </div>
                 </div>
             </div>
+
+            {/* Ventana Modal: Reporte General */}
+            {showReporte && (
+                <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+                                    <ClipboardList className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-800">Reporte General de Gantt</h3>
+                                    <p className="text-xs text-slate-500 font-medium">Resumen de cursos programados</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowReporte(false)} className="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 rounded-xl transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 max-h-[60vh] overflow-y-auto">
+                            <table className="w-full text-left border-collapse text-sm">
+                                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase">
+                                    <tr>
+                                        <th className="px-4 py-3 rounded-tl-lg">Materia / Curso</th>
+                                        <th className="px-4 py-3 rounded-tr-lg">Periodo (Inicio - Fin)</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {[...programacionFiltrada].sort((a, b) => new Date(a.fechaInicio) - new Date(b.fechaInicio)).map(p => (
+                                        <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-4 py-3">
+                                                <span className="font-bold text-slate-800 block">{p.curso.nombre}</span>
+                                                <span className="text-xs text-slate-500 font-medium">{p.empresa.nombre} • Inst. {p.curso.instructor}</span>
+                                            </td>
+                                            <td className="px-4 py-3 font-semibold text-slate-600">
+                                                {formatDateStr(p.fechaInicio)} al {formatDateStr(p.fechaFin)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {programacionFiltrada.length === 0 && (
+                                        <tr>
+                                            <td colSpan="2" className="px-4 py-8 text-center text-slate-500 font-medium">No hay cursos programados bajo este filtro.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                            <button onClick={() => setShowReporte(false)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 transition-colors">
+                                Cerrar
+                            </button>
+                            <button 
+                                onClick={exportReporteGeneralPDF} 
+                                disabled={programacionFiltrada.length === 0} 
+                                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Printer className="w-4 h-4" /> Exportar a PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -1966,14 +2139,24 @@ export default function App() {
     if (!dataLoaded) return <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4"><div className="text-center animate-pulse"><Plane className="w-16 h-16 text-sky-500 mx-auto mb-4" /><p className="text-sky-400 font-bold tracking-widest uppercase">Conectando...</p></div></div>;
 
     const DashboardCard = ({ icon: Icon, title, desc, action, color }) => (
-        <button onClick={() => setStep(action)} className="group relative flex flex-col items-start p-8 bg-white/85 backdrop-blur-md rounded-[2rem] shadow-2xl shadow-slate-900/10 border border-white hover:border-slate-300 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl overflow-hidden text-left">
-            <div className={`absolute -right-10 -top-10 w-40 h-40 bg-${color}-50 rounded-full blur-3xl opacity-60 group-hover:opacity-100 transition-opacity`}></div>
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-lg relative z-10 bg-gradient-to-br from-${color}-500 to-${color}-600 text-white group-hover:scale-110 transition-transform duration-300`}><Icon className="w-8 h-8" /></div>
-            <h3 className="text-2xl font-extrabold text-slate-800 mb-2 relative z-10">{title}</h3>
-            <p className="text-sm font-medium text-slate-500 relative z-10 mb-6">{desc}</p>
-            <div className="mt-auto w-full pt-4 border-t border-slate-100 flex items-center justify-between relative z-10">
-                <span className={`text-xs font-bold text-${color}-600 uppercase tracking-wider`}>Ir al Módulo</span>
-                <ChevronRight className={`w-5 h-5 text-${color}-500 group-hover:translate-x-1 transition-transform`} />
+        <button 
+            onClick={() => setStep(action)} 
+            className="group relative flex flex-col p-5 bg-white/95 backdrop-blur-md rounded-[1.5rem] shadow-lg shadow-slate-900/5 border border-white hover:border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden text-left h-full"
+        >
+            <div className={`absolute -right-8 -top-8 w-32 h-32 bg-${color}-100 rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-opacity`}></div>
+            
+            <div className="flex items-center gap-3 mb-3 relative z-10">
+                <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center shadow-md bg-gradient-to-br from-${color}-400 to-${color}-500 text-white group-hover:scale-110 transition-transform duration-300`}>
+                    <Icon className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 leading-tight">{title}</h3>
+            </div>
+            
+            <p className="text-xs font-medium text-slate-500 relative z-10 mb-4 flex-grow line-clamp-2">{desc}</p>
+            
+            <div className="mt-auto w-full pt-3 border-t border-slate-100 flex items-center justify-between relative z-10">
+                <span className={`text-[10px] font-bold text-${color}-600 uppercase tracking-wider`}>Ir al Módulo</span>
+                <ChevronRight className={`w-4 h-4 text-${color}-500 group-hover:translate-x-1 transition-transform`} />
             </div>
         </button>
     );
@@ -1990,31 +2173,31 @@ export default function App() {
             case 'logs': return <AuditLogs data={data} onClearLogs={handleClearLogs} />;
             case 'users': return <GestorUsuarios data={data} setData={handleUpdateData} addLog={addLog} />;
             default: return (
-                <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-700">
-                    <div className="relative overflow-hidden rounded-[3rem] bg-slate-900 shadow-2xl shadow-slate-900/40 p-8 md:p-20 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-10 border border-slate-800">
+                <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
+                    <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 shadow-2xl shadow-slate-900/40 p-8 md:p-12 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-8 border border-slate-800">
                         <div className="absolute inset-0 bg-cover bg-center -z-10 filter brightness-[0.45]" style={{ backgroundImage: `url('/BOEING.jpg?v=2')` }}></div>
                         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/50 to-transparent -z-10"></div>
                         <div className="relative z-10 max-w-2xl">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/80 backdrop-blur-md border border-slate-700 mb-6 text-sky-400 text-xs font-bold uppercase tracking-widest shadow-inner"><ShieldCheck className="w-4 h-4" /> Centro Autorizado L68</div>
-                            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight tracking-tight drop-shadow-md">Organizador de <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500">Adiestramiento</span></h1>
-                            <p className="text-base md:text-lg text-slate-200 font-medium max-w-xl drop-shadow">Sistema integral para la gestión, planificación e impartición de cursos L68 con soporte inteligente y exportación PDF.</p>
-                            <div className="mt-6 flex flex-wrap items-center gap-4">
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md border border-slate-700 mb-5 text-sky-400 text-xs font-bold uppercase tracking-widest shadow-inner"><ShieldCheck className="w-4 h-4" /> Centro Autorizado L68</div>
+                            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-4 leading-tight tracking-tight drop-shadow-md">Organizador de <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500">Adiestramiento</span></h1>
+                            <p className="text-sm md:text-base text-slate-200 font-medium max-w-xl drop-shadow">Sistema integral para la gestión, planificación e impartición de cursos L68 con soporte inteligente y exportación PDF.</p>
+                            <div className="mt-6 flex flex-wrap justify-center md:justify-start items-center gap-3">
                                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium border border-white/20"><User className="w-4 h-4" /> Activo: <span className="font-bold text-sky-300">{currentUser.name}</span></div>
-                                <button onClick={() => setStep('ausencias')} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-sm font-bold shadow-lg transition-colors border border-rose-400"><CalendarDays className="w-4 h-4" /> REPORTAR AUSENCIA DE INSTRUCTOR</button>
+                                <button onClick={() => setStep('ausencias')} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-lg transition-colors border border-rose-400"><CalendarDays className="w-4 h-4" /> REPORTAR AUSENCIA</button>
                             </div>
                         </div>
                         <div className="relative z-10 hidden md:block drop-shadow-[0_0_20px_rgba(59,130,246,0.4)]">
-                            <img src="/logo ocean.png" alt="L68" className="w-36 h-36 object-contain [mix-blend-mode:screen] filter contrast-125 brightness-110 animate-pulse" onError={(e) => e.target.style.display = 'none'} />
+                            <img src="/logo ocean.png" alt="L68" className="w-28 h-28 object-contain [mix-blend-mode:screen] filter contrast-125 brightness-110 animate-pulse" onError={(e) => e.target.style.display = 'none'} />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
                         <DashboardCard icon={Building2} title="Empresas" color="sky" action="empresa" desc="Directorio de aerolíneas contratantes." />
                         <DashboardCard icon={Users} title="Alumnos" color="emerald" action="alumno" desc="Inscripción de personal y tripulantes." />
-                        <DashboardCard icon={GraduationCap} title="Instructores" color="fuchsia" action="instructor" desc="Alta y gestión de la plantilla de instructores." />
-                        <DashboardCard icon={BookOpen} title="Cursos" color="indigo" action="curso" desc="Catálogo de materias L68 (Online/Presencial)." />
+                        <DashboardCard icon={GraduationCap} title="Instructores" color="fuchsia" action="instructor" desc="Alta y gestión de instructores." />
+                        <DashboardCard icon={BookOpen} title="Cursos" color="indigo" action="curso" desc="Catálogo de materias (Online/Presencial)." />
                         <DashboardCard icon={LayoutDashboard} title="Gantt & IA" color="amber" action="gantt" desc="Planificador Automático IA y Manual." />
-                        <DashboardCard icon={FileText} title="Reportes PDF" color="pink" action="reportes" desc="Resumen tabular mensual de cursos impartidos." />
+                        <DashboardCard icon={FileText} title="Reportes PDF" color="pink" action="reportes" desc="Resumen tabular mensual de cursos." />
                         {currentUser?.role === 'admin' && <DashboardCard icon={UserCog} title="Usuarios" color="purple" action="users" desc="Gestión de accesos y cuentas." />}
                     </div>
                 </div>
