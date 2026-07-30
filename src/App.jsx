@@ -253,7 +253,7 @@ function GestorUsuarios({ data, setData, addLog }) {
                     <div className="mt-10">
                         <h3 className="text-lg font-bold mb-4">Usuarios Activos</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {(data.usuarios || []).map(u => (
+                            {[...(data.usuarios || [])].sort((a, b) => a.name.localeCompare(b.name)).map(u => (
                                 <div key={u.id} className="bg-slate-900/50 p-4 rounded-xl border border-slate-700 flex justify-between items-center group">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${u.role === 'admin' ? 'bg-amber-500/20 text-amber-400' : 'bg-sky-500/20 text-sky-400'}`}>
@@ -509,7 +509,7 @@ function FormInstructor({ data, setData, addLog }) {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-1">
-                                {data.instructores.map(inst => (
+                                {[...(data.instructores || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(inst => (
                                     <div key={inst.id} className="group flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:border-fuchsia-300 hover:shadow-md transition-all">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-fuchsia-50 flex items-center justify-center text-fuchsia-600 font-bold text-lg">{inst.nombre.charAt(0).toUpperCase()}</div>
@@ -652,7 +652,7 @@ function FormCurso({ data, setData, addLog }) {
                                     style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
                                 >
                                     <option value="" disabled>Seleccione un instructor...</option>
-                                    {(data.instructores || []).map(inst => <option key={inst.id} value={inst.nombre}>{inst.nombre}</option>)}
+                                    {[...(data.instructores || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(inst => <option key={inst.id} value={inst.nombre}>{inst.nombre}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-1.5">
@@ -695,7 +695,7 @@ function FormCurso({ data, setData, addLog }) {
                             </div>
                         ) : (
                             <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-                                {data.cursos.map(c => (
+                                {[...(data.cursos || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(c => (
                                     <div key={c.id} className="group flex items-center justify-between p-5 bg-white border border-slate-200 rounded-2xl hover:border-indigo-300 hover:shadow-md transition-all">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
@@ -817,7 +817,7 @@ function FormEmpresa({ data, setData, addLog }) {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-1">
-                                {data.empresas.map(emp => (
+                                {[...(data.empresas || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(emp => (
                                     <div key={emp.id} className="group flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:border-sky-300 hover:shadow-md transition-all">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 font-bold text-lg">{emp.nombre.charAt(0).toUpperCase()}</div>
@@ -912,7 +912,7 @@ function FormAlumno({ data, setData, addLog }) {
                             <label className="text-sm font-semibold text-slate-700 ml-1">Organización / Empresa</label>
                             <select value={empresaId} onChange={(e) => setEmpresaId(e.target.value)} className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none text-slate-700 appearance-none cursor-pointer shadow-sm" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}>
                                 <option value="" disabled>Seleccione a qué empresa pertenece...</option>
-                                {data.empresas.map(emp => <option key={emp.id} value={emp.id}>{emp.nombre}</option>)}
+                                {[...(data.empresas || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(emp => <option key={emp.id} value={emp.id}>{emp.nombre}</option>)}
                             </select>
                         </div>
                         
@@ -938,7 +938,7 @@ function FormAlumno({ data, setData, addLog }) {
                             </div>
                         ) : (
                             <div className="space-y-4 max-h-60 overflow-y-auto pr-1">
-                                {empresasConAlumnos.map(emp => (
+                                {[...empresasConAlumnos].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(emp => (
                                     <div key={emp.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
                                         <button onClick={() => toggleEmpresa(emp.id)} className="w-full flex items-center justify-between p-5 bg-slate-50/50 hover:bg-slate-50 transition-colors">
                                             <div className="flex items-center gap-3">
@@ -953,7 +953,7 @@ function FormAlumno({ data, setData, addLog }) {
                                         
                                         {expandedEmpresas[emp.id] && (
                                             <div className="p-2 bg-white space-y-1 border-t border-slate-100">
-                                                {emp.alumnos.map(al => (
+                                                {[...(emp.alumnos || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(al => (
                                                     <div key={al.id} className="group flex items-center justify-between p-3 px-4 rounded-xl hover:bg-slate-50 transition-colors">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
@@ -1011,7 +1011,7 @@ function FormAusencia({ data, setData, addLog }) {
     const handleDelete = (id) => { setData({ ...data, ausencias: data.ausencias.filter(a => a.id !== id) }); addLog('Ausencias', `Eliminó registro de ausencia`); };
     const handleEdit = (a) => { setEditingId(a.id); setInstructor(a.instructor); setCausa(a.causa); setOtroMotivo(a.otroMotivo || ''); setFechaInicio(a.fechaInicio); setFechaFin(a.fechaFin); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
-    const instructoresUnicos = (data.instructores || []).map(i => i.nombre);
+    const instructoresUnicos = [...new Set((data.instructores || []).map(i => i.nombre))].sort((a, b) => a.localeCompare(b));
 
     return (
         <div className="relative min-h-[calc(100vh-5rem)] -m-4 md:-m-8 lg:-m-10 p-4 md:p-8 lg:p-10 flex items-center justify-center">
@@ -1069,7 +1069,7 @@ function FormAusencia({ data, setData, addLog }) {
                     <div className="mt-12 pt-8 border-t border-slate-100">
                         <h3 className="text-xl font-bold text-slate-800 mb-6">Ausencias Registradas</h3>
                         <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-                            {(data.ausencias || []).map(a => (
+                            {[...(data.ausencias || [])].sort((a, b) => a.instructor.localeCompare(b.instructor)).map(a => (
                                 <div key={a.id} className="flex justify-between items-center p-4 bg-white border rounded-2xl hover:border-rose-300 transition-all group">
                                     <div>
                                         <p className="font-bold text-slate-800">{a.instructor} <span className="text-xs font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded ml-2">{a.causa}</span></p>
@@ -1455,7 +1455,7 @@ function GanttBuilder({ data, setData, addLog }) {
                                     <label className="text-sm font-semibold text-slate-700 ml-1">Curso a impartir</label>
                                     <select value={formGantt.cursoId} onChange={e => setFormGantt({...formGantt, cursoId: e.target.value})} className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition-all outline-none text-slate-700 appearance-none shadow-sm cursor-pointer" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}>
                                         <option value="" disabled>Seleccione un curso del catálogo...</option>
-                                        {data.cursos.map(c => <option key={c.id} value={c.id}>{c.modalidad==='Online'?'🟢':'🔵'} {c.nombre} ({c.horasTotales} hrs) - Inst. {c.instructor}</option>)}
+                                        {[...(data.cursos || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(c => <option key={c.id} value={c.id}>{c.modalidad==='Online'?'🟢':'🔵'} {c.nombre} ({c.horasTotales} hrs) - Inst. {c.instructor}</option>)}
                                     </select>
                                     {formGantt.cursoId && data.cursos.find(c=>c.id===formGantt.cursoId)?.modalidad === 'Online' && <p className="text-xs text-green-600 font-bold bg-green-50 p-2 rounded flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Curso Online: Vía Libre para empalmes habilitada.</p>}
                                 </div>
@@ -1467,14 +1467,14 @@ function GanttBuilder({ data, setData, addLog }) {
 
                             <div className="space-y-6 bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100">
                                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-2"><span className="flex items-center justify-center w-6 h-6 rounded-full bg-white text-slate-500 text-sm shadow-sm border border-slate-200">2</span> Participantes</h3>
-                                <select value={empresaCurrent} onChange={e => {setEmpresaCurrent(e.target.value); setAlumnoCurrent('');}} className="w-full p-4 bg-white border rounded-2xl outline-none mb-3"><option value="">Filtrar Empresa...</option>{data.empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select>
+                                <select value={empresaCurrent} onChange={e => {setEmpresaCurrent(e.target.value); setAlumnoCurrent('');}} className="w-full p-4 bg-white border rounded-2xl outline-none mb-3"><option value="">Filtrar Empresa...</option>{[...(data.empresas || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select>
                                 <div className="flex gap-3">
-                                    <select disabled={!empresaCurrent} value={alumnoCurrent} onChange={e => setAlumnoCurrent(e.target.value)} className="flex-1 p-4 bg-white border rounded-2xl outline-none"><option value="">Seleccione alumno...</option>{data.alumnos.filter(a => a.empresaId === empresaCurrent).map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}</select>
+                                    <select disabled={!empresaCurrent} value={alumnoCurrent} onChange={e => setAlumnoCurrent(e.target.value)} className="flex-1 p-4 bg-white border rounded-2xl outline-none"><option value="">Seleccione alumno...</option>{[...(data.alumnos || [])].filter(a => a.empresaId === empresaCurrent).sort((a, b) => a.nombre.localeCompare(b.nombre)).map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}</select>
                                     <button type="button" onClick={addAlumno} disabled={!alumnoCurrent} className="bg-slate-800 text-white p-4 rounded-2xl"><PlusCircle className="w-6 h-6" /></button>
                                 </div>
                                 {alumnosSeleccionados.length > 0 && (
                                     <ul className="bg-white border rounded-2xl max-h-40 overflow-y-auto divide-y mt-4">
-                                        {alumnosSeleccionados.map(a => (
+                                        {[...alumnosSeleccionados].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(a => (
                                             <li key={a.id} className="flex justify-between items-center p-3 px-4 text-sm group">
                                                 <div><span className="font-bold block">{a.nombre}</span><span className="text-xs text-slate-400">{a.empresaNombre}</span></div>
                                                 <button onClick={() => removeAlumno(a.id)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
@@ -1496,19 +1496,19 @@ function GanttBuilder({ data, setData, addLog }) {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                                 <div className="space-y-6 bg-white p-6 rounded-3xl border border-purple-100">
                                     <h4 className="font-bold text-slate-700">1. Preparar Grupo (Lote)</h4>
-                                    <select value={autoCursoId} onChange={e=>setAutoCursoId(e.target.value)} className="w-full p-4 bg-white border rounded-2xl outline-none"><option value="">Seleccione Curso...</option>{data.cursos.map(c=><option key={c.id} value={c.id}>{c.modalidad==='Online'?'🟢':'🔵'} {c.nombre}</option>)}</select>
-                                    <select value={autoEmpresaId} onChange={e=>{setAutoEmpresaId(e.target.value); setAutoAlumnoId('');}} className="w-full p-4 bg-white border rounded-2xl outline-none"><option value="">Filtrar Empresa...</option>{data.empresas.map(e=><option key={e.id} value={e.id}>{e.nombre}</option>)}</select>
+                                    <select value={autoCursoId} onChange={e=>setAutoCursoId(e.target.value)} className="w-full p-4 bg-white border rounded-2xl outline-none"><option value="">Seleccione Curso...</option>{[...(data.cursos || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(c=><option key={c.id} value={c.id}>{c.modalidad==='Online'?'🟢':'🔵'} {c.nombre}</option>)}</select>
+                                    <select value={autoEmpresaId} onChange={e=>{setAutoEmpresaId(e.target.value); setAutoAlumnoId('');}} className="w-full p-4 bg-white border rounded-2xl outline-none"><option value="">Filtrar Empresa...</option>{[...(data.empresas || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(e=><option key={e.id} value={e.id}>{e.nombre}</option>)}</select>
                                     <div className="flex gap-3">
-                                        <select disabled={!autoEmpresaId} value={autoAlumnoId} onChange={e=>setAutoAlumnoId(e.target.value)} className="flex-1 p-4 bg-white border rounded-2xl outline-none"><option value="">Añadir alumno...</option>{data.alumnos.filter(a=>a.empresaId===autoEmpresaId).map(a=><option key={a.id} value={a.id}>{a.nombre}</option>)}</select>
+                                        <select disabled={!autoEmpresaId} value={autoAlumnoId} onChange={e=>setAutoAlumnoId(e.target.value)} className="flex-1 p-4 bg-white border rounded-2xl outline-none"><option value="">Añadir alumno...</option>{[...(data.alumnos || [])].filter(a=>a.empresaId===autoEmpresaId).sort((a, b) => a.nombre.localeCompare(b.nombre)).map(a=><option key={a.id} value={a.id}>{a.nombre}</option>)}</select>
                                         <button onClick={handleAutoAddAlumno} className="bg-purple-500 text-white p-4 rounded-2xl"><PlusCircle className="w-6 h-6"/></button>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">{autoAlumnosCurrent.map(a=><span key={a.id} className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold flex gap-2">{a.nombre} <button onClick={()=>setAutoAlumnosCurrent(autoAlumnosCurrent.filter(x=>x.id!==a.id))} className="text-red-500"><Trash2 className="w-3 h-3"/></button></span>)}</div>
+                                    <div className="flex flex-wrap gap-2">{[...autoAlumnosCurrent].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(a=><span key={a.id} className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold flex gap-2">{a.nombre} <button onClick={()=>setAutoAlumnosCurrent(autoAlumnosCurrent.filter(x=>x.id!==a.id))} className="text-red-500"><Trash2 className="w-3 h-3"/></button></span>)}</div>
                                     <button onClick={handleAutoAddCourse} className="w-full bg-slate-800 text-white p-4 rounded-2xl font-bold">AÑADIR CURSO AL LOTE</button>
                                 </div>
                                 
                                 <div className="space-y-4">
                                     <h4 className="font-bold text-slate-700 mb-4">2. Lote para IA ({autoBatch.length})</h4>
-                                    <div className="space-y-3">{autoBatch.map((req, i) => (
+                                    <div className="space-y-3">{[...autoBatch].sort((a, b) => { const cA = data.cursos.find(c=>c.id===a.cursoId)?.nombre || ''; const cB = data.cursos.find(c=>c.id===b.cursoId)?.nombre || ''; return cA.localeCompare(cB); }).map((req, i) => (
                                         <div key={i} className="p-4 bg-white border border-purple-200 rounded-xl flex justify-between items-center shadow-sm">
                                             <div><p className="font-bold text-sm text-slate-800">{data.cursos.find(c=>c.id===req.cursoId)?.nombre}</p><p className="text-xs text-purple-600 font-medium">{req.alumnos.length} alumnos</p></div>
                                             <div className="flex gap-2">
@@ -1550,7 +1550,7 @@ function GanttBuilder({ data, setData, addLog }) {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 bg-white">
-                                            {data.programacion.map(p => (
+                                            {[...(data.programacion || [])].sort((a, b) => a.curso.nombre.localeCompare(b.curso.nombre)).map(p => (
                                                 <tr key={p.id} className="hover:bg-slate-50 transition-colors group">
                                                     <td className="px-6 py-4">
                                                         <span className="font-bold text-slate-800 block">{p.curso.nombre}</span>
@@ -1754,7 +1754,7 @@ function GanttVisualizer({ programacion, goBack, generarListaAlumnosPDF, addLog 
                                 </div>
 
                                 <div className="border-x border-b border-slate-200 rounded-b-lg overflow-hidden bg-white">
-                                    {programacionFiltrada.map((prog, i) => {
+                                    {[...programacionFiltrada].sort((a, b) => a.curso.nombre.localeCompare(b.curso.nombre)).map((prog, i) => {
                                         const pInicio = new Date(`${prog.fechaInicio}T00:00:00`); const pFin = new Date(`${prog.fechaFin}T00:00:00`);
                                         pInicio.setHours(0,0,0,0); pFin.setHours(0,0,0,0);
                                         const msPerDay = 24 * 60 * 60 * 1000;
@@ -1851,7 +1851,7 @@ function ReportesMensuales({ data, addLog }) {
             doc.setFontSize(16); doc.setTextColor(15, 23, 42); 
             doc.text(`CURSOS DEL MES (${nombreMes})`, 14, 20);
 
-            const cursosDelMes = data.programacion.filter(p => p.fechaInicio.startsWith(mesFiltro));
+            const cursosDelMes = data.programacion.filter(p => p.fechaInicio.startsWith(mesFiltro)).sort((a, b) => a.curso.nombre.localeCompare(b.curso.nombre));
             const tableColumn = ["Nombre del Curso", "Número de Participantes"];
             const tableRows = cursosDelMes.map(prog => [prog.curso.nombre, prog.alumnos.length.toString()]);
             if (cursosDelMes.length === 0) tableRows.push(["No hay cursos registrados", "-"]);
