@@ -374,7 +374,7 @@ function AuditLogs({ data, onClearLogs, goBack }) {
     );
 }
 
-const Navbar = ({ step, setStep, goBack, canGoBack, currentUser, onLogout }) => {
+const Navbar = ({ step, setStep, currentUser, onLogout }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef(null);
 
@@ -1202,30 +1202,21 @@ function GanttBuilder({ data, setData, addLog, goBack }) {
     const allProgramacion = (data.diagramas || []).flatMap(d => d.programacion || []);
 
     const updateProg = (newProgArray) => {
-        setData(prev => ({
-            ...prev,
-            diagramas: (prev.diagramas || []).map(d => d.id === activeDiagramId ? { ...d, programacion: newProgArray } : d)
-        }));
-    };
-
-    const handleGuardarDiagrama = () => {
-        if (programacionActual.length === 0) {
-            setAlerta({ tipo: 'error', texto: 'Añade al menos un curso al diagrama antes de guardarlo.' });
-            return;
+        let nuevoNombre = activeDiagram?.nombre || 'NUEVO DIAGRAMA';
+        
+        if (newProgArray.length > 0) {
+            // Analiza automáticamente el curso que empieza primero para nombrar el diagrama
+            const minTime = Math.min(...newProgArray.map(p => new Date(p.fechaInicio + 'T00:00:00').getTime()));
+            const minDate = new Date(minTime);
+            const mes = minDate.toLocaleString('es-ES', { month: 'long', timeZone: 'UTC' }).toUpperCase();
+            const year = minDate.getUTCFullYear();
+            nuevoNombre = `CURSOS ${mes} ${year}`;
         }
-        const minTime = Math.min(...programacionActual.map(p => new Date(p.fechaInicio + 'T00:00:00').getTime()));
-        const minDate = new Date(minTime);
-        const mes = minDate.toLocaleString('es-ES', { month: 'long', timeZone: 'UTC' }).toUpperCase();
-        const year = minDate.getUTCFullYear();
-        const nuevoNombre = `CURSOS DE ${mes} ${year}`;
 
         setData(prev => ({
             ...prev,
-            diagramas: prev.diagramas.map(d => d.id === activeDiagramId ? { ...d, nombre: nuevoNombre } : d)
+            diagramas: (prev.diagramas || []).map(d => d.id === activeDiagramId ? { ...d, nombre: nuevoNombre, programacion: newProgArray } : d)
         }));
-        setAlerta({ tipo: 'success', texto: `Diagrama guardado exitosamente como: ${nuevoNombre}` });
-        addLog('Gantt', `Guardó y nombró el diagrama "${nuevoNombre}"`);
-        setTimeout(() => setAlerta(null), 3000);
     };
 
     const checkOverlaps = (fechaInicio, fechaFin, cursoAct, alumnosIds, ignoreProgId = null) => {
@@ -1553,7 +1544,11 @@ function GanttBuilder({ data, setData, addLog, goBack }) {
                             <button 
                                 onClick={() => {
                                     const newId = Date.now().toString();
-                                    const newDiag = { id: newId, nombre: 'Borrador - Nuevo Diagrama', programacion: [] };
+                                    const currentDate = new Date();
+                                    const mes = currentDate.toLocaleString('es-ES', { month: 'long' }).toUpperCase();
+                                    const year = currentDate.getFullYear();
+                                    
+                                    const newDiag = { id: newId, nombre: `CURSOS ${mes} ${year}`, programacion: [] };
                                     setData(prev => ({ ...prev, diagramas: [...(prev.diagramas || []), newDiag] }));
                                     setActiveDiagramId(newId);
                                     setStep('build');
@@ -1638,9 +1633,6 @@ function GanttBuilder({ data, setData, addLog, goBack }) {
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            <button onClick={handleGuardarDiagrama} className="px-5 py-2.5 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors shadow-lg shadow-emerald-500/30 flex items-center gap-2">
-                                <CheckCircle2 className="w-5 h-5" /> GUARDAR DIAGRAMA
-                            </button>
                             <button onClick={()=>setViewMode(viewMode==='manual'?'auto':'manual')} className="px-5 py-2.5 rounded-xl font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors shadow-sm">
                                 {viewMode==='manual' ? '✨ AUTOMÁTICO' : '✍️ MANUAL'}
                             </button>
@@ -2291,13 +2283,13 @@ export default function App() {
         return savedUser ? 'home' : 'login';
     });
 
-    // NUEVO: Historial de Navegación
+    // Historial de Navegación
     const [stepHistory, setStepHistory] = useState([]);
     
     const [data, setData] = useState(initialData);
     const [dataLoaded, setDataLoaded] = useState(false);
 
-    // Función modificada para guardar historial
+    // Función para guardar historial
     const handleSetStep = (newStep) => {
         if (newStep !== step) {
             setStepHistory(prev => {
@@ -2443,7 +2435,7 @@ export default function App() {
                         <div className="relative z-10 max-w-2xl">
                             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md border border-slate-700 mb-5 text-sky-400 text-xs font-bold uppercase tracking-widest shadow-inner"><ShieldCheck className="w-4 h-4" /> Centro Autorizado L68</div>
                             <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-4 leading-tight tracking-tight drop-shadow-md">Organizador de <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500">Adiestramiento</span></h1>
-                            <p className="text-sm md:text-base text-slate-200 font-medium max-w-xl drop-shadow">Sistema integral para la gestión, planificación e impartición de cursos L68 con soporte inteligente y exportación PDF.</p>
+                            <p className="text-sm md:text-base text-slate-200 font-medium max-w-xl drop-shadow">Bienvenidos al sistema para la gestión de cursos del centro de adiestramiento L68. Made by. Ing Marco López</p>
                             <div className="mt-6 flex flex-wrap justify-center md:justify-start items-center gap-3">
                                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium border border-white/20"><User className="w-4 h-4" /> Activo: <span className="font-bold text-sky-300">{currentUser.name}</span></div>
                                 <button onClick={() => handleSetStep('ausencias')} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-lg transition-colors border border-rose-400"><CalendarDays className="w-4 h-4" /> REPORTAR AUSENCIA</button>
@@ -2470,12 +2462,9 @@ export default function App() {
 
     return (
         <div className="min-h-screen bg-slate-900 font-sans selection:bg-sky-500/30">
-            {/* Pasamos el historial y las funciones a la Navbar */}
             <Navbar 
                 step={step} 
                 setStep={handleSetStep} 
-                goBack={handleGoBack} 
-                canGoBack={stepHistory.length > 0} 
                 currentUser={currentUser} 
                 onLogout={handleLogout} 
             />
