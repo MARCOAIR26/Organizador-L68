@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
     Building2, UserPlus, CalendarDays, CheckCircle2, AlertTriangle, 
     Trash2, ChevronDown, PlusCircle, Printer, Image as ImageIcon, 
-    Home, BookOpen, Plane, FileText, ChevronRight, Download,
+    Home, BookOpen, Plane, FileText, ChevronRight, ChevronLeft, Download,
     ShieldCheck, LayoutDashboard, Users, GraduationCap,
     LogOut, Key, User, History, Search, Edit3, UserCog, Wand2, Filter,
     X, ClipboardList
@@ -52,7 +52,7 @@ const initialData = {
     alumnos: [],
     instructores: [],
     cursos: [],
-    programacion: [],
+    diagramas: [],
     ausencias: [],
     logs: [],
     usuarios: [ 
@@ -159,7 +159,7 @@ function LoginScreen({ onLogin, data }) {
     );
 }
 
-function GestorUsuarios({ data, setData, addLog }) {
+function GestorUsuarios({ data, setData, addLog, goBack }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
@@ -204,6 +204,9 @@ function GestorUsuarios({ data, setData, addLog }) {
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl w-full mx-auto space-y-6">
                 <div className="bg-slate-800/90 backdrop-blur-xl p-8 rounded-[2rem] shadow-2xl border border-slate-700 text-white">
                     <div className="flex items-center gap-4 mb-8">
+                        <button onClick={goBack} className="p-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl transition-colors shadow-sm" title="Página anterior">
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
                         <div className="p-4 bg-purple-500/20 rounded-2xl text-purple-400 border border-purple-500/30">
                             <UserCog className="w-8 h-8" />
                         </div>
@@ -288,7 +291,7 @@ function GestorUsuarios({ data, setData, addLog }) {
     );
 }
 
-function AuditLogs({ data, onClearLogs }) {
+function AuditLogs({ data, onClearLogs, goBack }) {
     const [confirmClear, setConfirmClear] = useState(false);
 
     const handleClear = () => {
@@ -308,6 +311,9 @@ function AuditLogs({ data, onClearLogs }) {
                 <div className="bg-slate-800/90 backdrop-blur-xl p-8 rounded-[2rem] shadow-2xl border border-slate-700 text-white">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                         <div className="flex items-center gap-4">
+                            <button onClick={goBack} className="p-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl transition-colors shadow-sm" title="Página anterior">
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
                             <div className="p-4 bg-amber-500/20 rounded-2xl text-amber-400 border border-amber-500/30">
                                 <History className="w-8 h-8" />
                             </div>
@@ -368,70 +374,128 @@ function AuditLogs({ data, onClearLogs }) {
     );
 }
 
-const Navbar = ({ step, setStep, currentUser, onLogout }) => (
-    <header className="bg-slate-900/95 backdrop-blur-md text-white sticky top-0 z-50 shadow-xl border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-20">
-                <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setStep('home')}>
-                    <div className="bg-slate-800/80 p-2 rounded-xl group-hover:scale-105 transition-transform border border-slate-700 shadow-inner flex items-center justify-center">
-                        <img 
-                            src="/logo ocean.png" 
-                            alt="Logo Centro de Adiestramiento L68" 
-                            className="w-10 h-10 object-contain [mix-blend-mode:screen] filter contrast-125 brightness-110 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]" 
-                            onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.parentElement.innerHTML = '<div class="w-10 h-10 flex items-center justify-center text-sky-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-1.3-.3-2.5.3-3.2 1.4L1 8.5l7 3.5 1.5 5.5-1.5 3 2-2h3l2.5 2.5z"></path></svg></div>';
-                            }}
-                        />
+const Navbar = ({ step, setStep, goBack, canGoBack, currentUser, onLogout }) => {
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) setMenuOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const modules = [
+        { id: 'empresa', label: 'Empresas', icon: Building2 },
+        { id: 'alumno', label: 'Alumnos', icon: Users },
+        { id: 'instructor', label: 'Instructores', icon: GraduationCap },
+        { id: 'curso', label: 'Cursos', icon: BookOpen },
+        { id: 'ausencias', label: 'Ausencias', icon: CalendarDays },
+        { id: 'gantt', label: 'Gantt & IA', icon: LayoutDashboard },
+        { id: 'reportes', label: 'Reportes PDF', icon: FileText }
+    ];
+    if (currentUser?.role === 'admin') modules.push({ id: 'users', label: 'Usuarios', icon: UserCog });
+
+    return (
+        <header className="bg-slate-900/95 backdrop-blur-md text-white sticky top-0 z-50 shadow-xl border-b border-slate-800">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-20">
+                    <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setStep('home')}>
+                        <div className="bg-slate-800/80 p-2 rounded-xl group-hover:scale-105 transition-transform border border-slate-700 shadow-inner flex items-center justify-center">
+                            <img 
+                                src="/logo ocean.png" 
+                                alt="Logo Centro de Adiestramiento L68" 
+                                className="w-10 h-10 object-contain [mix-blend-mode:screen] filter contrast-125 brightness-110 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]" 
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                        </div>
+                        <div className="hidden sm:block">
+                            <h1 className="text-lg md:text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-sky-300">
+                                Centro L68
+                            </h1>
+                            <p className="text-[10px] uppercase tracking-widest text-sky-400 font-semibold">
+                                Gestión de Cursos
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-lg md:text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-sky-300">
-                            Centro de Adiestramiento L68
-                        </h1>
-                        <p className="text-[10px] uppercase tracking-widest text-sky-400 font-semibold">
-                            Asistente de control y programación de cursos
-                        </p>
+                    
+                    <div className="flex items-center gap-2 md:gap-3">
+                        
+                        {/* MENÚ DE MÓDULOS RÁPIDO */}
+                        {step !== 'home' && step !== 'login' && (
+                            <div className="relative" ref={menuRef}>
+                                <button 
+                                    onClick={() => setMenuOpen(!menuOpen)}
+                                    className="flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white transition-all text-sm font-bold shadow-lg shadow-sky-600/20"
+                                >
+                                    <LayoutDashboard className="w-4 h-4" />
+                                    <span className="hidden md:inline">Módulos</span>
+                                    <ChevronDown className="w-4 h-4" />
+                                </button>
+                                
+                                {menuOpen && (
+                                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                                        <div className="p-3 border-b border-slate-100 bg-slate-50">
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Navegación Rápida</p>
+                                        </div>
+                                        <div className="p-2 space-y-1">
+                                            {modules.map(m => (
+                                                <button
+                                                    key={m.id}
+                                                    onClick={() => { setStep(m.id); setMenuOpen(false); }}
+                                                    className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 transition-colors ${step === m.id ? 'bg-sky-50 text-sky-600 font-bold' : 'hover:bg-slate-50 text-slate-600 font-medium'}`}
+                                                >
+                                                    <m.icon className={`w-4 h-4 ${step === m.id ? 'text-sky-500' : 'text-slate-400'}`} /> {m.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* BOTÓN INICIO (HOME) */}
+                        {step !== 'home' && step !== 'login' && (
+                            <button 
+                                onClick={() => setStep('home')}
+                                className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-all border border-slate-700/60 shadow-lg"
+                                title="Ir al Inicio (Panel Principal)"
+                            >
+                                <Home className="w-5 h-5 text-sky-400" />
+                            </button>
+                        )}
+
+                        {currentUser?.role === 'admin' && step !== 'logs' && step !== 'login' && (
+                            <button 
+                                onClick={() => setStep('logs')}
+                                className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-all text-sm font-bold border border-amber-500/20"
+                            >
+                                <History className="w-4 h-4" /> Logs
+                            </button>
+                        )}
+
+                        {step !== 'login' && (
+                            <>
+                                <div className="h-8 w-px bg-slate-700 mx-1 hidden sm:block"></div>
+                                <button 
+                                    onClick={onLogout}
+                                    className="p-2.5 sm:px-4 sm:py-2.5 flex items-center gap-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all text-sm font-bold"
+                                    title="Cerrar Sesión"
+                                >
+                                    <LogOut className="w-5 h-5" />
+                                    <span className="hidden sm:inline">Salir</span>
+                                </button>
+                            </>
+                        )}
                     </div>
-                </div>
-                
-                <div className="flex items-center gap-4">
-                    {currentUser?.role === 'admin' && step !== 'logs' && (
-                        <button 
-                            onClick={() => setStep('logs')}
-                            className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-all text-sm font-bold border border-amber-500/20"
-                        >
-                            <History className="w-4 h-4" />
-                            Registro de Actividad
-                        </button>
-                    )}
-
-                    {step !== 'home' && (
-                        <button 
-                            onClick={() => setStep('home')}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white transition-all text-sm font-medium border border-slate-700/60 shadow-lg"
-                        >
-                            <Home className="w-4 h-4 text-sky-400" />
-                            <span className="hidden sm:inline">Volver al Panel</span>
-                        </button>
-                    )}
-
-                    <div className="h-8 w-px bg-slate-700 mx-2 hidden sm:block"></div>
-
-                    <button 
-                        onClick={onLogout}
-                        className="flex items-center gap-2 text-slate-400 hover:text-red-400 transition-colors text-sm font-medium"
-                        title="Cerrar Sesión"
-                    >
-                        <LogOut className="w-5 h-5" />
-                        <span className="hidden sm:inline">Salir</span>
-                    </button>
                 </div>
             </div>
-        </div>
-    </header>
-);
+        </header>
+    );
+};
 
-function FormInstructor({ data, setData, addLog }) {
+function FormInstructor({ data, setData, addLog, goBack }) {
     const [nombre, setNombre] = useState('');
     const [mensaje, setMensaje] = useState('');
     const [error, setError] = useState('');
@@ -472,6 +536,9 @@ function FormInstructor({ data, setData, addLog }) {
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl w-full mx-auto">
                 <div className="bg-white/90 backdrop-blur-xl p-8 md:p-10 rounded-[2rem] shadow-2xl shadow-slate-900/30 border border-white/80">
                     <div className="flex items-center gap-4 mb-8">
+                        <button onClick={goBack} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors shadow-sm" title="Página anterior">
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
                         <div className="p-4 bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-2xl shadow-lg shadow-fuchsia-500/30 text-white">
                             <GraduationCap className="w-8 h-8" />
                         </div>
@@ -531,7 +598,7 @@ function FormInstructor({ data, setData, addLog }) {
     );
 }
 
-function FormCurso({ data, setData, addLog }) {
+function FormCurso({ data, setData, addLog, goBack }) {
     const [nombre, setNombre] = useState('');
     const [horas, setHoras] = useState('');
     const [instructor, setInstructor] = useState('');
@@ -559,7 +626,10 @@ function FormCurso({ data, setData, addLog }) {
             setData({
                 ...data,
                 cursos: data.cursos.map(c => c.id === editingId ? cursoData : c),
-                programacion: data.programacion.map(p => p.curso.id === editingId ? { ...p, curso: cursoData } : p)
+                diagramas: (data.diagramas || []).map(d => ({
+                    ...d,
+                    programacion: d.programacion.map(p => p.curso.id === editingId ? { ...p, curso: cursoData } : p)
+                }))
             });
             addLog('Cursos', `Editó el curso "${cursoData.nombre}"`);
             setMensaje('Curso actualizado con éxito.');
@@ -591,7 +661,10 @@ function FormCurso({ data, setData, addLog }) {
         setData({
             ...data,
             cursos: data.cursos.filter(c => c.id !== curso.id),
-            programacion: data.programacion.filter(p => p.curso.id !== curso.id) 
+            diagramas: (data.diagramas || []).map(d => ({
+                ...d,
+                programacion: d.programacion.filter(p => p.curso.id !== curso.id)
+            }))
         });
         addLog('Cursos', `Eliminó el curso "${curso.nombre}"`);
     };
@@ -604,6 +677,9 @@ function FormCurso({ data, setData, addLog }) {
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl w-full mx-auto">
                 <div className="bg-white/90 backdrop-blur-xl p-8 md:p-10 rounded-[2rem] shadow-2xl shadow-slate-900/30 border border-white/80">
                     <div className="flex items-center gap-4 mb-8">
+                        <button onClick={goBack} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors shadow-sm" title="Página anterior">
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
                         <div className="p-4 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl shadow-lg shadow-indigo-500/30 text-white">
                             <BookOpen className="w-8 h-8" />
                         </div>
@@ -739,7 +815,7 @@ function FormCurso({ data, setData, addLog }) {
     );
 }
 
-function FormEmpresa({ data, setData, addLog }) {
+function FormEmpresa({ data, setData, addLog, goBack }) {
     const [nombre, setNombre] = useState('');
     const [mensaje, setMensaje] = useState('');
     const [error, setError] = useState('');
@@ -780,6 +856,9 @@ function FormEmpresa({ data, setData, addLog }) {
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl w-full mx-auto">
                 <div className="bg-white/90 backdrop-blur-xl p-8 md:p-10 rounded-[2rem] shadow-2xl shadow-slate-900/30 border border-white/80">
                     <div className="flex items-center gap-4 mb-8">
+                        <button onClick={goBack} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors shadow-sm" title="Página anterior">
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
                         <div className="p-4 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl shadow-lg shadow-sky-500/30 text-white">
                             <Building2 className="w-8 h-8" />
                         </div>
@@ -839,7 +918,7 @@ function FormEmpresa({ data, setData, addLog }) {
     );
 }
 
-function FormAlumno({ data, setData, addLog }) {
+function FormAlumno({ data, setData, addLog, goBack }) {
     const [nombre, setNombre] = useState('');
     const [empresaId, setEmpresaId] = useState('');
     const [mensaje, setMensaje] = useState('');
@@ -892,6 +971,9 @@ function FormAlumno({ data, setData, addLog }) {
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl w-full mx-auto">
                 <div className="bg-white/90 backdrop-blur-xl p-8 md:p-10 rounded-[2rem] shadow-2xl shadow-slate-900/30 border border-white/85">
                     <div className="flex items-center gap-4 mb-8">
+                        <button onClick={goBack} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors shadow-sm" title="Página anterior">
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
                         <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg shadow-emerald-500/30 text-white">
                             <Users className="w-8 h-8" />
                         </div>
@@ -979,7 +1061,7 @@ function FormAlumno({ data, setData, addLog }) {
     );
 }
 
-function FormAusencia({ data, setData, addLog }) {
+function FormAusencia({ data, setData, addLog, goBack }) {
     const [instructor, setInstructor] = useState('');
     const [causa, setCausa] = useState('Vacaciones');
     const [otroMotivo, setOtroMotivo] = useState('');
@@ -1022,6 +1104,9 @@ function FormAusencia({ data, setData, addLog }) {
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl w-full mx-auto">
                 <div className="bg-white/90 backdrop-blur-xl p-8 md:p-10 rounded-[2rem] shadow-2xl shadow-slate-900/30 border border-white/80">
                     <div className="flex items-center gap-4 mb-8">
+                        <button onClick={goBack} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors shadow-sm" title="Página anterior">
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
                         <div className="p-4 bg-rose-500/10 rounded-2xl text-rose-500 border border-rose-200">
                             <AlertTriangle className="w-8 h-8" />
                         </div>
@@ -1090,7 +1175,8 @@ function FormAusencia({ data, setData, addLog }) {
     );
 }
 
-function GanttBuilder({ data, setData, addLog }) {
+function GanttBuilder({ data, setData, addLog, goBack }) {
+    const [activeDiagramId, setActiveDiagramId] = useState(null);
     const [step, setStep] = useState('build'); 
     const [viewMode, setViewMode] = useState('manual'); 
     
@@ -1110,6 +1196,37 @@ function GanttBuilder({ data, setData, addLog }) {
     const [alerta, setAlerta] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [confirmClear, setConfirmClear] = useState(false);
+
+    const activeDiagram = (data.diagramas || []).find(d => d.id === activeDiagramId);
+    const programacionActual = activeDiagram?.programacion || [];
+    const allProgramacion = (data.diagramas || []).flatMap(d => d.programacion || []);
+
+    const updateProg = (newProgArray) => {
+        setData(prev => ({
+            ...prev,
+            diagramas: (prev.diagramas || []).map(d => d.id === activeDiagramId ? { ...d, programacion: newProgArray } : d)
+        }));
+    };
+
+    const handleGuardarDiagrama = () => {
+        if (programacionActual.length === 0) {
+            setAlerta({ tipo: 'error', texto: 'Añade al menos un curso al diagrama antes de guardarlo.' });
+            return;
+        }
+        const minTime = Math.min(...programacionActual.map(p => new Date(p.fechaInicio + 'T00:00:00').getTime()));
+        const minDate = new Date(minTime);
+        const mes = minDate.toLocaleString('es-ES', { month: 'long', timeZone: 'UTC' }).toUpperCase();
+        const year = minDate.getUTCFullYear();
+        const nuevoNombre = `CURSOS DE ${mes} ${year}`;
+
+        setData(prev => ({
+            ...prev,
+            diagramas: prev.diagramas.map(d => d.id === activeDiagramId ? { ...d, nombre: nuevoNombre } : d)
+        }));
+        setAlerta({ tipo: 'success', texto: `Diagrama guardado exitosamente como: ${nuevoNombre}` });
+        addLog('Gantt', `Guardó y nombró el diagrama "${nuevoNombre}"`);
+        setTimeout(() => setAlerta(null), 3000);
+    };
 
     const checkOverlaps = (fechaInicio, fechaFin, cursoAct, alumnosIds, ignoreProgId = null) => {
         const fi = new Date(fechaInicio + 'T00:00:00');
@@ -1152,7 +1269,7 @@ function GanttBuilder({ data, setData, addLog }) {
             }
         }
 
-        for (const prog of data.programacion) {
+        for (const prog of allProgramacion) {
             if (ignoreProgId && prog.id === ignoreProgId) continue;
             
             const pFi = new Date(prog.fechaInicio + 'T00:00:00').getTime();
@@ -1215,10 +1332,10 @@ function GanttBuilder({ data, setData, addLog }) {
         const payload = { id: editingId || Date.now().toString(), curso, empresa: empresaAsignada, fechaInicio: formGantt.fechaInicio, fechaFin: formGantt.fechaFin, alumnos: alumnosSeleccionados };
 
         if (editingId) {
-            setData({ ...data, programacion: data.programacion.map(p => p.id === editingId ? payload : p) });
+            updateProg(programacionActual.map(p => p.id === editingId ? payload : p));
             setEditingId(null); setAlerta({ tipo: 'success', texto: 'Curso actualizado.' });
         } else {
-            setData({ ...data, programacion: [...data.programacion, payload] });
+            updateProg([...programacionActual, payload]);
             setAlerta({ tipo: 'success', texto: 'Curso programado.' });
         }
         setFormGantt({ cursoId: '', fechaInicio: '', fechaFin: '' }); setAlumnosSeleccionados([]); setTimeout(() => setAlerta(null), 3000);
@@ -1228,7 +1345,7 @@ function GanttBuilder({ data, setData, addLog }) {
     const cancelEdit = () => { setEditingId(null); setFormGantt({ cursoId: '', fechaInicio: '', fechaFin: '' }); setAlumnosSeleccionados([]); };
     
     const handleDeleteProgramacion = (prog) => { 
-        setData({ ...data, programacion: data.programacion.filter(p => p.id !== prog.id) }); 
+        updateProg(programacionActual.filter(p => p.id !== prog.id)); 
         addLog('Gantt', `Eliminó la programación del curso "${prog.curso.nombre}"`); 
     };
 
@@ -1238,7 +1355,7 @@ function GanttBuilder({ data, setData, addLog }) {
             setTimeout(() => setConfirmClear(false), 4000); 
             return;
         }
-        setData({ ...data, programacion: [] });
+        updateProg([]);
         addLog('Gantt', 'Vació por completo la programación del diagrama de Gantt');
         setConfirmClear(false);
         setAlerta({ tipo: 'success', texto: 'Se ha vaciado el diagrama por completo.' });
@@ -1270,7 +1387,7 @@ function GanttBuilder({ data, setData, addLog }) {
         let dailyUsage = {};
         const getU = (d) => { if (!dailyUsage[d]) dailyUsage[d] = { inst: {}, stu: {} }; return dailyUsage[d]; };
 
-        data.programacion.forEach(prog => {
+        allProgramacion.forEach(prog => {
             const isO = prog.curso.modalidad === 'Online'; const hrs = isO ? 1 : 8;
             let c = new Date(prog.fechaInicio + 'T00:00:00'); let end = new Date(prog.fechaFin + 'T00:00:00');
             while(c <= end) {
@@ -1350,6 +1467,13 @@ function GanttBuilder({ data, setData, addLog }) {
         setStep('preview_auto');
     };
 
+    const acceptAuto = () => {
+        updateProg([...programacionActual, ...propuestaIA]);
+        setAutoBatch([]);
+        setStep('view');
+        addLog('Gantt', 'Guardó programación automática IA');
+    };
+
     const generarListaAlumnosPDF = async (prog) => {
         addLog('Documentos', `Generó la lista de asistencia en PDF para "${prog.curso.nombre}"`);
         try {
@@ -1403,13 +1527,89 @@ function GanttBuilder({ data, setData, addLog }) {
         }
     };
 
-    if (step === 'view') return <GanttVisualizer programacion={data.programacion} goBack={() => setStep('build')} generarListaAlumnosPDF={generarListaAlumnosPDF} addLog={addLog} />;
+    if (!activeDiagramId) {
+        const diagramas = data.diagramas || [];
+        return (
+            <div className="relative min-h-[calc(100vh-5rem)] -m-4 md:-m-8 lg:-m-10 p-4 md:p-8 lg:p-10 flex items-center justify-center">
+                <div className="absolute inset-0 bg-cover bg-center -z-10 filter brightness-[0.75]" style={{ backgroundImage: `url('/A320 WALLPAPER.jpg')` }}></div>
+                <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] -z-10"></div>
+                
+                <div className="animate-in fade-in zoom-in-95 duration-300 max-w-5xl w-full mx-auto space-y-6">
+                    <div className="bg-white/90 backdrop-blur-xl p-8 md:p-10 rounded-[2rem] shadow-2xl border border-white/85 shadow-slate-900/30">
+                        <div className="flex items-center gap-4 mb-8 border-b border-slate-100 pb-6">
+                            <button onClick={goBack} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors shadow-sm" title="Página anterior">
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <div className="p-4 bg-gradient-to-br from-amber-500 to-orange-400 rounded-2xl shadow-lg shadow-amber-500/30 text-white">
+                                <LayoutDashboard className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Gestor de Diagramas</h2>
+                                <p className="text-slate-500 mt-1">Crea un nuevo diagrama de Gantt o continúa con uno guardado</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <button 
+                                onClick={() => {
+                                    const newId = Date.now().toString();
+                                    const newDiag = { id: newId, nombre: 'Borrador - Nuevo Diagrama', programacion: [] };
+                                    setData(prev => ({ ...prev, diagramas: [...(prev.diagramas || []), newDiag] }));
+                                    setActiveDiagramId(newId);
+                                    setStep('build');
+                                }}
+                                className="group flex flex-col items-center justify-center p-8 bg-slate-50/50 border-2 border-dashed border-slate-300 rounded-[2rem] hover:bg-amber-50 hover:border-amber-400 transition-all duration-300 min-h-[200px]"
+                            >
+                                <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform group-hover:text-amber-500 text-slate-400">
+                                    <PlusCircle className="w-8 h-8" />
+                                </div>
+                                <span className="font-bold text-slate-600 group-hover:text-amber-600">Crear Nuevo Diagrama</span>
+                            </button>
+
+                            {diagramas.sort((a,b) => b.id.localeCompare(a.id)).map(diag => (
+                                <div key={diag.id} className="relative flex flex-col p-6 bg-white border border-slate-200 rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 min-h-[200px]">
+                                    <div className="flex-1">
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className="p-3 bg-amber-100 text-amber-600 rounded-xl"><CalendarDays className="w-6 h-6"/></div>
+                                            <button 
+                                                onClick={() => {
+                                                    if(window.confirm(`¿Seguro que deseas eliminar el diagrama "${diag.nombre}"?`)) {
+                                                        setData(prev => ({ ...prev, diagramas: prev.diagramas.filter(d => d.id !== diag.id) }));
+                                                        addLog('Gantt', `Eliminó el diagrama "${diag.nombre}"`);
+                                                    }
+                                                }}
+                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Eliminar Diagrama"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                        <h3 className="text-lg font-bold text-slate-800 leading-tight mb-1">{diag.nombre}</h3>
+                                        <p className="text-sm text-slate-500 font-medium">{diag.programacion.length} cursos programados</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => { setActiveDiagramId(diag.id); setStep('build'); }}
+                                        className="w-full mt-4 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                                    >
+                                        Abrir Diagrama <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (step === 'view') return <GanttVisualizer programacion={programacionActual} goBack={() => setStep('build')} generarListaAlumnosPDF={generarListaAlumnosPDF} addLog={addLog} />;
+    
     if (step === 'preview_auto') return (
         <div className="relative min-h-screen">
-            <GanttVisualizer programacion={[...data.programacion, ...propuestaIA]} goBack={() => setStep('build')} generarListaAlumnosPDF={generarListaAlumnosPDF} addLog={addLog} />
+            <GanttVisualizer programacion={[...programacionActual, ...propuestaIA]} goBack={() => setStep('build')} generarListaAlumnosPDF={generarListaAlumnosPDF} addLog={addLog} />
             <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex gap-4 z-50 bg-slate-900/90 backdrop-blur-md p-4 rounded-3xl border border-slate-700 shadow-2xl">
                 <button onClick={() => setStep('build')} className="px-6 py-3 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700">VOLVER / CANCELAR</button>
-                <button onClick={() => { setData({...data, programacion: [...data.programacion, ...propuestaIA]}); setAutoBatch([]); setStep('view'); addLog('Gantt', 'Guardó programación automática IA'); }} className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg hover:scale-105">✅ ACEPTAR Y GUARDAR</button>
+                <button onClick={acceptAuto} className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg hover:scale-105">✅ ACEPTAR Y GUARDAR</button>
             </div>
         </div>
     );
@@ -1424,23 +1624,29 @@ function GanttBuilder({ data, setData, addLog }) {
                     
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 pb-8 mb-8">
                         <div className="flex items-center gap-4">
+                            <button onClick={() => setActiveDiagramId(null)} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors shadow-sm" title="Volver a Diagramas">
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
                             <div className={`p-4 rounded-2xl shadow-lg text-white ${viewMode==='auto' ? 'bg-gradient-to-br from-purple-500 to-indigo-600 shadow-purple-500/30' : 'bg-gradient-to-br from-amber-500 to-orange-400 shadow-amber-500/30'}`}>
                                 {viewMode==='auto' ? <Wand2 className="w-8 h-8"/> : <CalendarDays className="w-8 h-8" />}
                             </div>
                             <div>
-                                <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">
-                                    {editingId ? 'Editando Programación' : (viewMode==='auto' ? 'Gantt Automático (IA)' : 'Planificador Gantt')}
+                                <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">
+                                    {activeDiagram?.nombre || 'Borrador'} {editingId && '- Editando'}
                                 </h2>
-                                <p className="text-slate-500 mt-1">{viewMode==='auto'?'El sistema asignará fechas evitando empalmes':'Asigna fechas manualmente'}</p>
+                                <p className="text-slate-500 mt-1">{viewMode==='auto'?'Asignación automática IA':'Asignación manual'}</p>
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            <button onClick={()=>setViewMode(viewMode==='manual'?'auto':'manual')} className="px-5 py-2.5 rounded-xl font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors shadow-sm">
-                                {viewMode==='manual' ? '✨ MODO AUTOMÁTICO' : '✍️ MODO MANUAL'}
+                            <button onClick={handleGuardarDiagrama} className="px-5 py-2.5 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors shadow-lg shadow-emerald-500/30 flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5" /> GUARDAR DIAGRAMA
                             </button>
-                            <button onClick={() => setStep('view')} disabled={data.programacion.length === 0} className="group flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-slate-900/20 hover:-translate-y-1 active:scale-95">
-                                VER DIAGRAMA
-                                <span className="bg-amber-500 text-slate-900 px-2 py-0.5 rounded-lg text-sm group-disabled:bg-slate-300 group-disabled:text-slate-500">{data.programacion.length}</span>
+                            <button onClick={()=>setViewMode(viewMode==='manual'?'auto':'manual')} className="px-5 py-2.5 rounded-xl font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors shadow-sm">
+                                {viewMode==='manual' ? '✨ AUTOMÁTICO' : '✍️ MANUAL'}
+                            </button>
+                            <button onClick={() => setStep('view')} disabled={programacionActual.length === 0} className="group flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-slate-900/20 hover:-translate-y-1 active:scale-95">
+                                VER GANTT
+                                <span className="bg-amber-500 text-slate-900 px-2 py-0.5 rounded-lg text-sm group-disabled:bg-slate-300 group-disabled:text-slate-500">{programacionActual.length}</span>
                                 <ChevronRight className="w-5 h-5 group-disabled:opacity-0" />
                             </button>
                         </div>
@@ -1524,11 +1730,11 @@ function GanttBuilder({ data, setData, addLog }) {
                         </div>
                     )}
 
-                    {viewMode === 'manual' && data.programacion.length > 0 && (
+                    {viewMode === 'manual' && programacionActual.length > 0 && (
                         <div className="mt-10 bg-white/90 backdrop-blur-xl p-8 rounded-[2rem] shadow-xl border border-white/85">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                                 <h3 className="font-extrabold text-xl text-slate-800 flex items-center gap-2">
-                                    <FileText className="w-6 h-6 text-slate-400" /> Cursos Programados
+                                    <FileText className="w-6 h-6 text-slate-400" /> Cursos Programados en este Diagrama
                                 </h3>
                                 <button
                                     onClick={handleClearAll}
@@ -1551,7 +1757,7 @@ function GanttBuilder({ data, setData, addLog }) {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 bg-white">
-                                            {[...(data.programacion || [])].sort((a, b) => a.curso.nombre.localeCompare(b.curso.nombre)).map(p => (
+                                            {[...programacionActual].sort((a, b) => a.curso.nombre.localeCompare(b.curso.nombre)).map(p => (
                                                 <tr key={p.id} className="hover:bg-slate-50 transition-colors group">
                                                     <td className="px-6 py-4">
                                                         <span className="font-bold text-slate-800 block">{p.curso.nombre}</span>
@@ -1797,10 +2003,10 @@ function GanttVisualizer({ programacion, goBack, generarListaAlumnosPDF, addLog 
                     
                     <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-100 pb-6 mb-6 gap-6">
                         <div className="flex items-center gap-4">
-                            <button onClick={goBack} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors shadow-sm"><Home className="w-5 h-5" /></button>
+                            <button onClick={goBack} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors shadow-sm" title="Página anterior"><ChevronLeft className="w-5 h-5" /></button>
                             <div>
                                 <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2"><CalendarDays className="w-7 h-7 text-amber-500" /> Visualizador de Gantt</h2>
-                                <p className="text-sm text-slate-500 font-medium mt-1">Mapa general de capacitación</p>
+                                <p className="text-sm text-slate-500 font-medium mt-1">Mapa de capacitación del diagrama actual</p>
                             </div>
                         </div>
                         
@@ -2000,11 +2206,13 @@ function GanttVisualizer({ programacion, goBack, generarListaAlumnosPDF, addLog 
     );
 }
 
-function ReportesMensuales({ data, addLog }) {
+function ReportesMensuales({ data, addLog, goBack }) {
     const [mesFiltro, setMesFiltro] = useState('');
     const [alerta, setAlerta] = useState(null);
 
-    const mesesDisponibles = [...new Set(data.programacion.map(p => {
+    const allProgramacion = (data.diagramas || []).flatMap(d => d.programacion || []);
+
+    const mesesDisponibles = [...new Set(allProgramacion.map(p => {
         const d = new Date(`${p.fechaInicio}T00:00:00`); 
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     }))].sort().reverse();
@@ -2024,7 +2232,7 @@ function ReportesMensuales({ data, addLog }) {
             doc.setFontSize(16); doc.setTextColor(15, 23, 42); 
             doc.text(`CURSOS DEL MES (${nombreMes})`, 14, 20);
 
-            const cursosDelMes = data.programacion.filter(p => p.fechaInicio.startsWith(mesFiltro)).sort((a, b) => a.curso.nombre.localeCompare(b.curso.nombre));
+            const cursosDelMes = allProgramacion.filter(p => p.fechaInicio.startsWith(mesFiltro)).sort((a, b) => a.curso.nombre.localeCompare(b.curso.nombre));
             const tableColumn = ["Nombre del Curso", "Número de Participantes"];
             const tableRows = cursosDelMes.map(prog => [prog.curso.nombre, prog.alumnos.length.toString()]);
             if (cursosDelMes.length === 0) tableRows.push(["No hay cursos registrados", "-"]);
@@ -2044,8 +2252,11 @@ function ReportesMensuales({ data, addLog }) {
             <div className="absolute inset-0 bg-slate-900 -z-10"></div>
             <div className="animate-in fade-in zoom-in-95 duration-300 max-w-2xl w-full mx-auto p-8 bg-slate-800 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-slate-700">
                 <div className="flex items-center gap-4 mb-8">
+                    <button onClick={goBack} className="p-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl transition-colors shadow-sm" title="Página anterior">
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
                     <div className="p-4 bg-pink-500/20 text-pink-400 rounded-2xl"><FileText className="w-8 h-8" /></div>
-                    <div><h2 className="text-3xl font-extrabold text-white">Reportes Mensuales</h2><p className="text-slate-400">Resumen en PDF de cursos impartidos</p></div>
+                    <div><h2 className="text-3xl font-extrabold text-white">Reportes Mensuales</h2><p className="text-slate-400">Resumen en PDF de cursos impartidos (Global)</p></div>
                 </div>
                 {alerta && <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${alerta.tipo==='error'?'bg-red-500/20 text-red-300':'bg-emerald-500/20 text-emerald-300'}`}>{alerta.tipo==='error'?<AlertTriangle className="w-5 h-5"/>:<CheckCircle2 className="w-5 h-5"/>} <span className="font-medium">{alerta.texto}</span></div>}
                 <div className="space-y-6">
@@ -2075,13 +2286,41 @@ export default function App() {
         return savedUser ? JSON.parse(savedUser) : null;
     });
 
-    const [step, setStep] = useState(() => {
+    const [step, setStepState] = useState(() => {
         const savedUser = localStorage.getItem('l68_current_user');
         return savedUser ? 'home' : 'login';
     });
+
+    // NUEVO: Historial de Navegación
+    const [stepHistory, setStepHistory] = useState([]);
     
     const [data, setData] = useState(initialData);
     const [dataLoaded, setDataLoaded] = useState(false);
+
+    // Función modificada para guardar historial
+    const handleSetStep = (newStep) => {
+        if (newStep !== step) {
+            setStepHistory(prev => {
+                const newHist = [...prev, step];
+                return newHist.length > 20 ? newHist.slice(newHist.length - 20) : newHist;
+            });
+            setStepState(newStep);
+        }
+    };
+
+    // Función para botón "Atrás"
+    const handleGoBack = () => {
+        setStepHistory(prev => {
+            const newHist = [...prev];
+            const previous = newHist.pop();
+            if (previous) {
+                setStepState(previous);
+            } else {
+                setStepState('home');
+            }
+            return newHist;
+        });
+    };
 
     const handleUpdateData = (newDataOrUpdater) => {
         setData(prev => {
@@ -2100,6 +2339,19 @@ export default function App() {
                 const fetchedData = docSnap.data();
                 if (!fetchedData.usuarios) fetchedData.usuarios = initialData.usuarios;
                 if (!fetchedData.instructores) fetchedData.instructores = initialData.instructores;
+                
+                // MIGRACIÓN AUTOMÁTICA DE DATOS VIEJOS AL NUEVO SISTEMA DE MÚLTIPLES DIAGRAMAS
+                if (fetchedData.programacion && fetchedData.programacion.length > 0) {
+                    if (!fetchedData.diagramas) fetchedData.diagramas = [];
+                    fetchedData.diagramas.push({
+                        id: 'legacy_data',
+                        nombre: 'CURSOS ANTERIORES',
+                        programacion: fetchedData.programacion
+                    });
+                    fetchedData.programacion = []; // Limpiamos la matriz antigua
+                    setDoc(docRef, fetchedData).catch(err => console.error(err));
+                }
+
                 setData(fetchedData);
             } else { setDoc(docRef, initialData); }
             setDataLoaded(true);
@@ -2132,15 +2384,26 @@ export default function App() {
     };
 
     const handleClearLogs = () => { handleUpdateData(prev => ({ ...prev, logs: [] })); addLog('Sistema', 'Vació historial', currentUser?.name); };
-    const handleLogin = (user) => { setCurrentUser(user); localStorage.setItem('l68_current_user', JSON.stringify(user)); setStep('home'); addLog('Sistema', `Inició sesión`, user.name); };
-    const handleLogout = () => { if(currentUser) addLog('Sistema', `Cerró sesión`, currentUser.name); setCurrentUser(null); localStorage.removeItem('l68_current_user'); setStep('login'); };
+    const handleLogin = (user) => { 
+        setCurrentUser(user); 
+        localStorage.setItem('l68_current_user', JSON.stringify(user)); 
+        setStepHistory([]);
+        setStepState('home'); 
+        addLog('Sistema', `Inició sesión`, user.name); 
+    };
+    const handleLogout = () => { 
+        if(currentUser) addLog('Sistema', `Cerró sesión`, currentUser.name); 
+        setCurrentUser(null); 
+        localStorage.removeItem('l68_current_user'); 
+        setStepState('login'); 
+    };
 
     if (step === 'login') return <LoginScreen onLogin={handleLogin} data={data} />;
     if (!dataLoaded) return <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4"><div className="text-center animate-pulse"><Plane className="w-16 h-16 text-sky-500 mx-auto mb-4" /><p className="text-sky-400 font-bold tracking-widest uppercase">Conectando...</p></div></div>;
 
     const DashboardCard = ({ icon: Icon, title, desc, action, color }) => (
         <button 
-            onClick={() => setStep(action)} 
+            onClick={() => handleSetStep(action)} 
             className="group relative flex flex-col p-5 bg-white/95 backdrop-blur-md rounded-[1.5rem] shadow-lg shadow-slate-900/5 border border-white hover:border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden text-left h-full"
         >
             <div className={`absolute -right-8 -top-8 w-32 h-32 bg-${color}-100 rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-opacity`}></div>
@@ -2163,15 +2426,15 @@ export default function App() {
 
     const renderContent = () => {
         switch(step) {
-            case 'empresa': return <FormEmpresa data={data} setData={handleUpdateData} addLog={addLog} />;
-            case 'alumno': return <FormAlumno data={data} setData={handleUpdateData} addLog={addLog} />;
-            case 'instructor': return <FormInstructor data={data} setData={handleUpdateData} addLog={addLog} />;
-            case 'curso': return <FormCurso data={data} setData={handleUpdateData} addLog={addLog} />;
-            case 'ausencias': return <FormAusencia data={data} setData={handleUpdateData} addLog={addLog} />;
-            case 'gantt': return <GanttBuilder data={data} setData={handleUpdateData} addLog={addLog} />;
-            case 'reportes': return <ReportesMensuales data={data} addLog={addLog} />;
-            case 'logs': return <AuditLogs data={data} onClearLogs={handleClearLogs} />;
-            case 'users': return <GestorUsuarios data={data} setData={handleUpdateData} addLog={addLog} />;
+            case 'empresa': return <FormEmpresa data={data} setData={handleUpdateData} addLog={addLog} goBack={handleGoBack} />;
+            case 'alumno': return <FormAlumno data={data} setData={handleUpdateData} addLog={addLog} goBack={handleGoBack} />;
+            case 'instructor': return <FormInstructor data={data} setData={handleUpdateData} addLog={addLog} goBack={handleGoBack} />;
+            case 'curso': return <FormCurso data={data} setData={handleUpdateData} addLog={addLog} goBack={handleGoBack} />;
+            case 'ausencias': return <FormAusencia data={data} setData={handleUpdateData} addLog={addLog} goBack={handleGoBack} />;
+            case 'gantt': return <GanttBuilder data={data} setData={handleUpdateData} addLog={addLog} goBack={handleGoBack} />;
+            case 'reportes': return <ReportesMensuales data={data} addLog={addLog} goBack={handleGoBack} />;
+            case 'logs': return <AuditLogs data={data} onClearLogs={handleClearLogs} goBack={handleGoBack} />;
+            case 'users': return <GestorUsuarios data={data} setData={handleUpdateData} addLog={addLog} goBack={handleGoBack} />;
             default: return (
                 <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
                     <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 shadow-2xl shadow-slate-900/40 p-8 md:p-12 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-8 border border-slate-800">
@@ -2183,7 +2446,7 @@ export default function App() {
                             <p className="text-sm md:text-base text-slate-200 font-medium max-w-xl drop-shadow">Sistema integral para la gestión, planificación e impartición de cursos L68 con soporte inteligente y exportación PDF.</p>
                             <div className="mt-6 flex flex-wrap justify-center md:justify-start items-center gap-3">
                                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium border border-white/20"><User className="w-4 h-4" /> Activo: <span className="font-bold text-sky-300">{currentUser.name}</span></div>
-                                <button onClick={() => setStep('ausencias')} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-lg transition-colors border border-rose-400"><CalendarDays className="w-4 h-4" /> REPORTAR AUSENCIA</button>
+                                <button onClick={() => handleSetStep('ausencias')} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-lg transition-colors border border-rose-400"><CalendarDays className="w-4 h-4" /> REPORTAR AUSENCIA</button>
                             </div>
                         </div>
                         <div className="relative z-10 hidden md:block drop-shadow-[0_0_20px_rgba(59,130,246,0.4)]">
@@ -2207,7 +2470,15 @@ export default function App() {
 
     return (
         <div className="min-h-screen bg-slate-900 font-sans selection:bg-sky-500/30">
-            <Navbar step={step} setStep={setStep} currentUser={currentUser} onLogout={handleLogout} />
+            {/* Pasamos el historial y las funciones a la Navbar */}
+            <Navbar 
+                step={step} 
+                setStep={handleSetStep} 
+                goBack={handleGoBack} 
+                canGoBack={stepHistory.length > 0} 
+                currentUser={currentUser} 
+                onLogout={handleLogout} 
+            />
             <main className="p-4 md:p-8 lg:p-10 max-w-[1400px] mx-auto relative z-0">
                 {renderContent()}
             </main>
