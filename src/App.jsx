@@ -404,7 +404,7 @@ const Navbar = ({ step, setStep, currentUser, onLogout }) => {
                     <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setStep('home')}>
                         <div className="bg-slate-800/80 p-2 rounded-xl group-hover:scale-105 transition-transform border border-slate-700 shadow-inner flex items-center justify-center">
                             <img 
-                                src="/logo ocean.png" 
+                                src="/logo-ocean.png" 
                                 alt="Logo Centro de Adiestramiento L68" 
                                 className="w-10 h-10 object-contain [mix-blend-mode:screen] filter contrast-125 brightness-110 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]" 
                                 onError={(e) => { e.target.style.display = 'none'; }}
@@ -994,7 +994,7 @@ function FormAlumno({ data, setData, addLog, goBack }) {
                         <div className="space-y-1.5">
                             <label className="text-sm font-semibold text-slate-700 ml-1">Organización / Empresa</label>
                             <select value={empresaId} onChange={(e) => setEmpresaId(e.target.value)} className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none text-slate-700 appearance-none cursor-pointer shadow-sm" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}>
-                                <option value="" disabled>Seleccione a qué empresa pertenece...</option>
+                                <option value="" disabled>Seleccione la empresa a la que pertenece el alumno...</option>
                                 {[...(data.empresas || [])].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(emp => <option key={emp.id} value={emp.id}>{emp.nombre}</option>)}
                             </select>
                         </div>
@@ -2073,14 +2073,24 @@ function GanttVisualizer({ programacion, goBack, generarListaAlumnosPDF, addLog 
                                         return (
                                             <div key={prog.id} className={`flex group ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-amber-50/30 transition-colors border-b border-slate-100 last:border-0`}>
                                                 <div className="w-[340px] flex-shrink-0 border-r border-slate-200 p-3 flex justify-between items-center bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
-                                                    <div className="flex flex-col justify-center flex-1 pr-2">
-                                                        <span className="font-extrabold text-sm text-slate-800 line-clamp-1 flex items-center">
-                                                            {prog.curso.nombre} 
-                                                            {isMultiMes && <span className="text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap border border-red-200">Multi-mes</span>}
-                                                        </span>
-                                                        <div className="flex items-center justify-between mt-0.5">
-                                                            <span className={`text-[11px] font-semibold line-clamp-1 ${prog.empresa.nombre === 'Múltiples Empresas' ? 'text-indigo-600' : 'text-slate-500'}`}>{prog.empresa.nombre}</span>
-                                                            <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-2">{prog.alumnos.length} pax</span>
+                                                    <div className="flex flex-col justify-center flex-1 pr-2 min-h-[44px] min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-extrabold text-sm text-slate-800 truncate leading-relaxed pb-0.5">
+                                                                {prog.curso.nombre} 
+                                                            </span>
+                                                            {isMultiMes && (
+                                                                <span className="text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded flex-shrink-0 border border-red-200">
+                                                                    Multi-mes
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center justify-between mt-1">
+                                                            <span className={`text-[11px] font-semibold truncate leading-relaxed pb-0.5 pr-2 ${prog.empresa.nombre === 'Múltiples Empresas' ? 'text-indigo-600' : 'text-slate-500'}`}>
+                                                                {prog.empresa.nombre}
+                                                            </span>
+                                                            <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded flex-shrink-0">
+                                                                {prog.alumnos.length} pax
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     {generarListaAlumnosPDF && (
@@ -2089,7 +2099,7 @@ function GanttVisualizer({ programacion, goBack, generarListaAlumnosPDF, addLog 
                                                                 e.currentTarget.style.opacity = '0.5';
                                                                 generarListaAlumnosPDF(prog).finally(() => { e.currentTarget.style.opacity = '1' });
                                                             }}
-                                                            className="pdf-button flex-shrink-0 bg-slate-900 hover:bg-slate-700 text-white p-2 rounded-lg flex items-center justify-center transition-all shadow-sm"
+                                                            className="pdf-button flex-shrink-0 bg-slate-900 hover:bg-slate-700 text-white p-2 rounded-lg flex items-center justify-center transition-all shadow-sm ml-2"
                                                             title="Ver Lista de Alumnos (PDF)"
                                                         >
                                                             <Download className="w-4 h-4" />
@@ -2442,7 +2452,7 @@ export default function App() {
                             </div>
                         </div>
                         <div className="relative z-10 hidden md:block drop-shadow-[0_0_20px_rgba(59,130,246,0.4)]">
-                            <img src="/logo ocean.png" alt="L68" className="w-28 h-28 object-contain [mix-blend-mode:screen] filter contrast-125 brightness-110 animate-pulse" onError={(e) => e.target.style.display = 'none'} />
+                            <img src="/logo-ocean.png" alt="L68" className="w-28 h-28 object-contain [mix-blend-mode:screen] filter contrast-125 brightness-110 animate-pulse" onError={(e) => e.target.style.display = 'none'} />
                         </div>
                     </div>
 
