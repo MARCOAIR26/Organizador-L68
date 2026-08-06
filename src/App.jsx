@@ -245,6 +245,7 @@ function GestorUsuarios({ data, setData, addLog, goBack }) {
                             <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full p-4 bg-slate-800 border border-slate-600 rounded-xl outline-none focus:border-purple-500 transition-all text-white appearance-none cursor-pointer" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 1rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}>
                                 <option value="user">Usuario Básico (Registros y Gantt)</option>
                                 <option value="admin">Administrador (Acceso total, Logs y Usuarios)</option>
+                                <option value="guest">Invitado (Modo Demo / Sin Guardado)</option>
                             </select>
                         </div>
                         <div className="md:col-span-2 pt-2">
@@ -260,14 +261,14 @@ function GestorUsuarios({ data, setData, addLog, goBack }) {
                             {[...(data.usuarios || [])].sort((a, b) => a.name.localeCompare(b.name)).map(u => (
                                 <div key={u.id} className="bg-slate-900/50 p-4 rounded-xl border border-slate-700 flex justify-between items-center group">
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${u.role === 'admin' ? 'bg-amber-500/20 text-amber-400' : 'bg-sky-500/20 text-sky-400'}`}>
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${u.role === 'admin' ? 'bg-amber-500/20 text-amber-400' : u.role === 'guest' ? 'bg-rose-500/20 text-rose-400' : 'bg-sky-500/20 text-sky-400'}`}>
                                             {u.username.charAt(0).toUpperCase()}
                                         </div>
                                         <div>
                                             <p className="font-bold text-white text-sm">{u.name}</p>
                                             <div className="flex gap-2 items-center mt-0.5">
                                                 <p className="text-xs text-slate-400">@{u.username}</p>
-                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${u.role === 'admin' ? 'bg-amber-500/20 text-amber-400' : 'bg-sky-500/20 text-sky-400'}`}>
+                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${u.role === 'admin' ? 'bg-amber-500/20 text-amber-400' : u.role === 'guest' ? 'bg-rose-500/20 text-rose-400' : 'bg-sky-500/20 text-sky-400'}`}>
                                                     {u.role.toUpperCase()}
                                                 </span>
                                             </div>
@@ -422,6 +423,13 @@ const Navbar = ({ step, setStep, currentUser, onLogout }) => {
                     
                     <div className="flex items-center gap-2 md:gap-3">
                         
+                        {/* AVISO MODO DEMO PARA INVITADOS */}
+                        {currentUser?.role === 'guest' && (
+                            <div className="hidden lg:flex items-center gap-1.5 bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold animate-pulse shadow-lg">
+                                <AlertTriangle className="w-4 h-4" /> MODO DEMO
+                            </div>
+                        )}
+
                         {/* MENÚ DE MÓDULOS RÁPIDO */}
                         {step !== 'home' && step !== 'login' && (
                             <div className="relative" ref={menuRef}>
@@ -2288,18 +2296,18 @@ export default function App() {
         return savedUser ? JSON.parse(savedUser) : null;
     });
 
+    // Nuevo Ref para controlar silenciosamente el modo invitado
+    const isGuestRef = useRef(currentUser?.role === 'guest');
+
     const [step, setStepState] = useState(() => {
         const savedUser = localStorage.getItem('l68_current_user');
         return savedUser ? 'home' : 'login';
     });
 
-    // Historial de Navegación
     const [stepHistory, setStepHistory] = useState([]);
-    
     const [data, setData] = useState(initialData);
     const [dataLoaded, setDataLoaded] = useState(false);
 
-    // Función para guardar historial
     const handleSetStep = (newStep) => {
         if (newStep !== step) {
             setStepHistory(prev => {
@@ -2310,7 +2318,6 @@ export default function App() {
         }
     };
 
-    // Función para botón "Atrás"
     const handleGoBack = () => {
         setStepHistory(prev => {
             const newHist = [...prev];
@@ -2327,6 +2334,12 @@ export default function App() {
     const handleUpdateData = (newDataOrUpdater) => {
         setData(prev => {
             const finalData = typeof newDataOrUpdater === 'function' ? newDataOrUpdater(prev) : newDataOrUpdater;
+            
+            // LÓGICA DE MODO INVITADO: Retornamos la data local pero NO ejecutamos setDoc (No guardamos en Firebase)
+            if (isGuestRef.current) {
+                return finalData;
+            }
+
             setDoc(docRef, finalData).catch(err => console.error("Error nube:", err));
             localStorage.setItem('l68_afac_data', JSON.stringify(finalData));
             return finalData;
@@ -2337,12 +2350,15 @@ export default function App() {
         let isResolved = false;
         const unsubscribe = onSnapshot(docRef, (docSnap) => {
             isResolved = true;
+            
+            // Si el usuario es invitado, ignoramos todos los cambios de la BD para no borrar su demo
+            if (isGuestRef.current) return;
+
             if (docSnap.exists()) {
                 const fetchedData = docSnap.data();
                 if (!fetchedData.usuarios) fetchedData.usuarios = initialData.usuarios;
                 if (!fetchedData.instructores) fetchedData.instructores = initialData.instructores;
                 
-                // MIGRACIÓN AUTOMÁTICA DE DATOS VIEJOS AL NUEVO SISTEMA DE MÚLTIPLES DIAGRAMAS
                 if (fetchedData.programacion && fetchedData.programacion.length > 0) {
                     if (!fetchedData.diagramas) fetchedData.diagramas = [];
                     fetchedData.diagramas.push({
@@ -2350,7 +2366,7 @@ export default function App() {
                         nombre: 'CURSOS ANTERIORES',
                         programacion: fetchedData.programacion
                     });
-                    fetchedData.programacion = []; // Limpiamos la matriz antigua
+                    fetchedData.programacion = []; 
                     setDoc(docRef, fetchedData).catch(err => console.error(err));
                 }
 
@@ -2386,18 +2402,44 @@ export default function App() {
     };
 
     const handleClearLogs = () => { handleUpdateData(prev => ({ ...prev, logs: [] })); addLog('Sistema', 'Vació historial', currentUser?.name); };
+    
     const handleLogin = (user) => { 
         setCurrentUser(user); 
         localStorage.setItem('l68_current_user', JSON.stringify(user)); 
+        isGuestRef.current = (user.role === 'guest');
         setStepHistory([]);
         setStepState('home'); 
-        addLog('Sistema', `Inició sesión`, user.name); 
+        
+        if (user.role === 'guest') {
+            // Vaciar sistema para el modo demostración
+            setData({
+                empresas: [],
+                alumnos: [],
+                instructores: [],
+                cursos: [],
+                diagramas: [],
+                ausencias: [],
+                logs: [],
+                usuarios: data.usuarios
+            });
+        } else {
+            addLog('Sistema', `Inició sesión`, user.name); 
+        }
     };
+
     const handleLogout = () => { 
-        if(currentUser) addLog('Sistema', `Cerró sesión`, currentUser.name); 
+        if(currentUser && currentUser.role !== 'guest') addLog('Sistema', `Cerró sesión`, currentUser.name); 
+        
+        const wasGuest = isGuestRef.current;
         setCurrentUser(null); 
+        isGuestRef.current = false;
         localStorage.removeItem('l68_current_user'); 
         setStepState('login'); 
+        
+        // Al salir del modo invitado, forzamos recargar la página para recuperar los datos reales de la BD
+        if (wasGuest) {
+            window.location.reload();
+        }
     };
 
     if (step === 'login') return <LoginScreen onLogin={handleLogin} data={data} />;
@@ -2447,7 +2489,10 @@ export default function App() {
                             <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-4 leading-tight tracking-tight drop-shadow-md">Organizador de <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500">Adiestramiento</span></h1>
                             <p className="text-sm md:text-base text-slate-200 font-medium max-w-xl drop-shadow">Bienvenidos al sistema para la gestión de cursos del centro de adiestramiento L68. Made by. Ing Marco López</p>
                             <div className="mt-6 flex flex-wrap justify-center md:justify-start items-center gap-3">
-                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium border border-white/20"><User className="w-4 h-4" /> Activo: <span className="font-bold text-sky-300">{currentUser.name}</span></div>
+                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium border border-white/20">
+                                    <User className="w-4 h-4" /> Activo: <span className="font-bold text-sky-300">{currentUser.name}</span>
+                                    {currentUser?.role === 'guest' && <span className="ml-2 bg-rose-500 px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white shadow-sm">Invitado</span>}
+                                </div>
                                 <button onClick={() => handleSetStep('ausencias')} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-lg transition-colors border border-rose-400"><CalendarDays className="w-4 h-4" /> REPORTAR AUSENCIA</button>
                             </div>
                         </div>
